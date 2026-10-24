@@ -7,8 +7,10 @@ import type { SkillComparison } from "@/types";
 // Behaviour that is known to be broken (Required column, override marker,
 // summary counts) is intentionally not asserted here.
 const comparisons: SkillComparison[] = [
-    { skill_label: "Contoh Ruby on Rails", required_level: 3, candidate_level: 3, result: "match", delta: 0 },
-    { skill_label: "Contoh System Design", required_level: 4, result: "not_assessed" },
+    { skill_label: "Contoh Ruby on Rails", expected_level: 3, candidate_level: 3, level_source: "ai", is_override: false,
+      confidence: "high", result: "match", delta: 0, counts_toward_fit: true },
+    { skill_label: "Contoh System Design", expected_level: 4, candidate_level: null, level_source: null, is_override: false,
+      confidence: null, result: "not_assessed", delta: null, counts_toward_fit: false },
 ];
 
 describe("ComparisonTable", () => {
