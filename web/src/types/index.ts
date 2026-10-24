@@ -133,25 +133,58 @@ export interface VacancySkill {
   _destroy?: boolean;
 }
 
-export type SkillComparisonResult = "match" | "gap" | "exceed" | "not_assessed";
+export type SkillComparisonResult = "match" | "gap" | "exceed" | "not_assessed" | "low_confidence";
+export type LevelSource = "ai" | "assessor_confirmed" | "assessor_override";
 
+// Mirrors FitGap::ReportPresenter (api/app/services/fit_gap/report_presenter.rb).
 export interface SkillComparison {
   skill_label: string;
-  required_level: number;
-  candidate_level?: number;
+  skill_id?: string | null;
+  expected_level: number;
+  ai_level?: number | null;
+  candidate_level: number | null;
+  level_source: LevelSource | null;
+  is_override: boolean;
+  override_notes?: string | null;
+  confidence: "high" | "medium" | "low" | null;
   result: SkillComparisonResult;
-  delta?: number;
-  is_override?: boolean;
+  delta: number | null;
+  counts_toward_fit: boolean;
+  not_assessed_reason?: NotAssessedReason | null;
+  tentative_direction?: "below" | "equal" | "above" | null;
+}
+
+export interface FitGapSummary {
+  total: number;
+  evidenced: number;
+  match: number;
+  exceed: number;
+  gap: number;
+  not_assessed: number;
+  low_confidence: number;
+  overridden: number;
+  confirmed: number;
+}
+
+export interface FitGapNarrative {
+  status: "not_requested" | "generating" | "complete" | "failed" | "outdated";
+  source: "ai" | "legacy_fallback" | null;
+  label: string;
+  culture: string | null;
+  overall: string | null;
+  generated_at?: string | null;
+  error_code?: string | null;
 }
 
 export interface FitGapReport {
-  id: number;
   portfolio_id: number;
   vacancy_id: number;
-  skill_comparisons: SkillComparison[];
-  culture_narrative: string;
-  overall_narrative: string;
-  generated_at: string;
+  role_title?: string;
+  ratings_validated?: boolean;
+  summary: FitGapSummary;
+  comparisons: SkillComparison[];
+  follow_up: string[];
+  narrative: FitGapNarrative;
 }
 
 export interface SkillTaxonomy {

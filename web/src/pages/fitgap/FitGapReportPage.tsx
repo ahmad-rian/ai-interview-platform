@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,8 @@ import ComparisonTable from "@/components/fitgap/ComparisonTable";
 import { portfoliosApi } from "@/services/portfolios";
 import { sessionsApi } from "@/services/sessions";
 import { usePolling } from "@/hooks/usePolling";
-import { ArrowLeft, Download, Loader2, RefreshCw, Zap } from "lucide-react";
+import { ArrowLeft, Download, Loader2, RefreshCw, Sparkles, Zap } from "lucide-react";
+import type { FitGapNarrative } from "@/types";
 import type { FitGapReport, Portfolio } from "@/types";
 
 export default function FitGapReportPage() {
@@ -25,23 +26,31 @@ export default function FitGapReportPage() {
   const [exporting, setExporting] = useState<"pdf" | "json" | null>(null);
   const [regenerating, setRegenerating] = useState(false);
 
+  const narrativeRequested = useRef(false);
+
+  // Reads only: comparisons are computed by the API on every GET, and polling
+  // continues only while the narrative is being written (D1).
   const fetchReport = useCallback(async () => {
     if (!portfolio) return;
     try {
       const res = await portfoliosApi.getFitGap(portfolio.id, Number(vacancyId));
-      setReport(res.data.report);
+      const next = res.data.report;
+      setReport(next);
+      setGenerating(next.narrative.status === "generating");
+    } catch {
       setGenerating(false);
-    } catch (e: any) {
-      if (e?.response?.status === 404) {
-        try {
-          await portfoliosApi.triggerFitGap(portfolio.id, Number(vacancyId));
-          setGenerating(true);
-        } catch {
-          setGenerating(false);
-        }
-      }
     }
   }, [portfolio, vacancyId]);
+
+  // The narrative is requested once, when none exists yet; never from polling.
+  useEffect(() => {
+    if (!portfolio || report?.narrative.status !== "not_requested" || narrativeRequested.current) return;
+    narrativeRequested.current = true;
+    portfoliosApi
+      .triggerFitGap(portfolio.id, Number(vacancyId))
+      .then(() => setGenerating(true))
+      .catch(() => setGenerating(false));
+  }, [portfolio, report, vacancyId]);
 
   useEffect(() => {
     sessionsApi
@@ -66,7 +75,6 @@ export default function FitGapReportPage() {
     setRegenerating(true);
     try {
       await portfoliosApi.regenerateFitGap(portfolio.id, Number(vacancyId));
-      setReport(null);
       setGenerating(true);
     } finally {
       setRegenerating(false);
@@ -144,7 +152,7 @@ export default function FitGapReportPage() {
       {generating && (
         <div className="border rounded-lg p-12 text-center space-y-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-          <p className="text-sm text-muted-foreground">Generating fit/gap report...</p>
+          <p className="text-sm text-muted-foreground">Writing the AI narrative...</p>
         </div>
       )}
 
@@ -157,7 +165,7 @@ export default function FitGapReportPage() {
               <CardTitle className="text-sm">Skill Comparison</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <ComparisonTable comparisons={report.skill_comparisons} />
+              <ComparisonTable comparisons={report.comparisons} />
             </CardContent>
           </Card>
 
@@ -169,9 +177,7 @@ export default function FitGapReportPage() {
               <CardTitle className="text-sm">Culture &amp; Competency Fit</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-                {report.culture_narrative || report.overall_narrative}
-              </p>
+              <NarrativeBody narrative={report.narrative} />
             </CardContent>
           </Card>
 
@@ -206,6 +212,30 @@ export default function FitGapReportPage() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+const NARRATIVE_STATUS_TEXT: Record<Exclude<FitGapNarrative["status"], "complete">, string> = {
+  not_requested: "No AI narrative yet.",
+  generating: "Writing the AI narrative...",
+  failed: "The AI narrative could not be generated. Use Regenerate to try again.",
+  outdated: "Ratings changed after this narrative was written. Use Regenerate to refresh it.",
+};
+
+function NarrativeBody({ narrative }: { narrative: FitGapNarrative }) {
+  if (narrative.status !== "complete") {
+    return <p className="text-sm text-muted-foreground">{NARRATIVE_STATUS_TEXT[narrative.status]}</p>;
+  }
+
+  return (
+    <div className="space-y-2 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+      <p className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+        <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+        {narrative.label}
+      </p>
+      {narrative.culture && <p>{narrative.culture}</p>}
+      {narrative.overall && <p>{narrative.overall}</p>}
     </div>
   );
 }
