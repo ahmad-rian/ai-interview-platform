@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_24_000002) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_24_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -56,15 +56,34 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_24_000002) do
     t.check_constraint "time_limit_min = ANY (ARRAY[10, 30, 45, 60, 90])", name: "chk_assessments_time_limit"
   end
 
+  create_table "assessor_override_events", force: :cascade do |t|
+    t.bigint "portfolio_skill_id", null: false
+    t.string "action", limit: 20, null: false
+    t.integer "from_level"
+    t.integer "to_level"
+    t.integer "ai_level_at_time"
+    t.text "notes"
+    t.bigint "actor_id", null: false
+    t.datetime "created_at", default: -> { "now()" }, null: false
+    t.index ["portfolio_skill_id", "created_at"], name: "index_override_events_on_skill_and_time"
+    t.check_constraint "action::text = 'confirm'::text OR notes IS NOT NULL AND length(btrim(notes)) > 0", name: "chk_override_events_notes"
+    t.check_constraint "action::text = ANY (ARRAY['set'::character varying, 'revert'::character varying, 'confirm'::character varying]::text[])", name: "chk_override_events_action"
+    t.check_constraint "ai_level_at_time IS NULL OR ai_level_at_time >= 1 AND ai_level_at_time <= 5", name: "chk_override_events_ai_level_at_time"
+    t.check_constraint "from_level IS NULL OR from_level >= 1 AND from_level <= 5", name: "chk_override_events_from_level"
+    t.check_constraint "to_level IS NULL OR to_level >= 1 AND to_level <= 5", name: "chk_override_events_to_level"
+  end
+
   create_table "assessor_overrides", force: :cascade do |t|
     t.bigint "portfolio_skill_id", null: false
-    t.integer "ai_level", null: false
+    t.integer "ai_level"
     t.integer "override_level", null: false
     t.text "assessor_notes"
     t.bigint "overridden_by", null: false
     t.datetime "overridden_at", default: -> { "now()" }
+    t.integer "lock_version", default: 0, null: false
     t.index ["portfolio_skill_id"], name: "index_assessor_overrides_on_portfolio_skill_id", unique: true
-    t.check_constraint "ai_level >= 1 AND ai_level <= 5", name: "chk_overrides_ai_level"
+    t.check_constraint "ai_level IS NULL OR ai_level >= 1 AND ai_level <= 5", name: "chk_overrides_ai_level"
+    t.check_constraint "assessor_notes IS NOT NULL AND length(btrim(assessor_notes)) > 0", name: "chk_overrides_notes_present"
     t.check_constraint "override_level >= 1 AND override_level <= 5", name: "chk_overrides_override_level"
   end
 
@@ -120,6 +139,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_24_000002) do
     t.string "not_assessed_reason", limit: 40
     t.string "coverage_state", limit: 20
     t.integer "probe_count"
+    t.string "skill_key", limit: 300, null: false
+    t.index ["portfolio_id", "is_discovered", "skill_key"], name: "index_portfolio_skills_on_identity", unique: true
     t.index ["portfolio_id"], name: "index_portfolio_skills_on_portfolio_id"
     t.check_constraint "ai_level IS NULL OR ai_level >= 1 AND ai_level <= 5", name: "chk_portfolio_skills_ai_level"
     t.check_constraint "not_assessed_reason IS NULL OR (not_assessed_reason::text = ANY (ARRAY['not_covered'::character varying, 'no_level_from_model'::character varying, 'invalid_level_from_model'::character varying, 'no_evidence'::character varying]::text[]))", name: "chk_portfolio_skills_not_assessed_reason"
@@ -217,6 +238,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_24_000002) do
   end
 
   add_foreign_key "assessment_skills", "assessments"
+  add_foreign_key "assessor_override_events", "portfolio_skills"
   add_foreign_key "assessor_overrides", "portfolio_skills"
   add_foreign_key "coverage_maps", "sessions"
   add_foreign_key "fit_gap_reports", "portfolios"
