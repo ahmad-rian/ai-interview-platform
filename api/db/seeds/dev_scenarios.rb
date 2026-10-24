@@ -131,13 +131,13 @@ module DevScenarios
       portfolio: portfolio.reload, vacancy: vacancy, report: report }
   end
 
-  # Overrides are written directly (not via the API) before the fit/gap report
-  # is built, so the report reflects them. One raises a level with a note, one
-  # lowers a level without any note.
+  # Overrides go through the same service as the API (with the required note
+  # and a history event) before the fit/gap report is built, so the report
+  # reflects them. One raises a level, one lowers it.
   def override_scenario(assessment, vacancy)
     scenario(assessment, vacancy, 'E', 'override asesor', normal_response('E')) do |portfolio|
       add_override(portfolio, 'SQL & Data Modeling', 3, 'Contoh catatan: bukti tambahan dari studi kasus tertulis.')
-      add_override(portfolio, 'Komunikasi Teknis', 1, nil)
+      add_override(portfolio, 'Komunikasi Teknis', 1, 'Contoh catatan: diturunkan setelah diskusi panel.')
     end
   end
 
@@ -290,10 +290,7 @@ module DevScenarios
 
   def add_override(portfolio, label, level, notes)
     skill = portfolio.portfolio_skills.find_by!(skill_label: label)
-    skill.create_assessor_override!(
-      ai_level: skill.ai_level, override_level: level, assessor_notes: notes,
-      overridden_by: ASSESSOR_ID, overridden_at: Time.current
-    )
+    PortfolioSkills::OverrideActions.new(skill, actor_id: ASSESSOR_ID).set(level: level, notes: notes)
   end
 
   def print_summary(results)

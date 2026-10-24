@@ -187,7 +187,7 @@ module Portfolios
       raise OutputError, 'invalid_output'
     end
 
-    # Validates every entry first, then replaces the skills and completes the
+    # Validates every entry first, then updates the skills and completes the
     # portfolio in one transaction, so a failure never leaves a partial write.
     def save_skills(portfolio, data)
       maps  = @session.coverage_maps.to_a
@@ -195,10 +195,40 @@ module Portfolios
       rows += normalize_entries(data['discovered_skills'], maps, discovered: true)
 
       Portfolio.transaction do
-        portfolio.portfolio_skills.destroy_all
-        rows.each { |attributes| portfolio.portfolio_skills.create!(attributes) }
+        upsert_skills(portfolio, unique_by_key(rows))
         portfolio.update!(generation_status: 'complete', generated_at: Time.current, ratings_validated: true,
                           generation_error: nil, generation_error_code: nil)
+      end
+    end
+
+    # Skills are matched by a stable key and updated in place, so assessor
+    # overrides and their history survive regeneration (AC-24). A skill the
+    # model no longer returns is kept as not assessed when an assessor has
+    # overridden it (AC-25), and removed otherwise.
+    def upsert_skills(portfolio, rows)
+      existing = portfolio.portfolio_skills.includes(:assessor_override).index_by { |s| [s.is_discovered, s.skill_key] }
+
+      rows.each do |key, attributes|
+        skill = existing.delete(key) || portfolio.portfolio_skills.build
+        skill.update!(attributes)
+      end
+
+      existing.each_value do |skill|
+        if skill.assessor_override
+          skill.update!(rating_status: 'not_assessed', not_assessed_reason: 'not_covered', ai_level: nil,
+                        ai_confidence: nil, evidence: [], coverage_state: nil, probe_count: nil)
+        else
+          skill.destroy!
+        end
+      end
+    end
+
+    # The model may repeat a skill; the first entry wins.
+    def unique_by_key(rows)
+      rows.each_with_object({}) do |attributes, by_key|
+        key = [attributes[:is_discovered],
+               PortfolioSkill.key_for(skill_id: attributes[:skill_id], skill_label: attributes[:skill_label])]
+        by_key[key] ||= attributes
       end
     end
 

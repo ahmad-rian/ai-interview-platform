@@ -7,33 +7,35 @@ module Api
 
       before_action :set_portfolio_skill
 
-      # POST /api/v1/portfolio-skills/:id/override
+      rescue_from PortfolioSkills::OverrideActions::Error do |error|
+        json_error(error.message, error.status)
+      end
+
+      # POST /api/v1/portfolio_skills/:id/override
       def override
-        existing = @portfolio_skill.assessor_override
+        override, created = actions.set(level: override_param(:level, :override_level),
+                                        notes: override_param(:notes, :assessor_notes),
+                                        lock_version: override_param(:lock_version))
+        regenerate_stale_fitgap_reports
+        json_response({ override: override_json(override) }, created ? :created : :ok)
+      end
 
-        if existing
-          if existing.update(override_params.merge(overridden_by: current_user.id, overridden_at: Time.current))
-            regenerate_stale_fitgap_reports
-            json_response(override: override_json(existing))
-          else
-            json_error(existing.errors.full_messages.first, :unprocessable_entity)
-          end
-        else
-          new_override = @portfolio_skill.build_assessor_override(
-            override_params.merge(
-              ai_level:      @portfolio_skill.ai_level,
-              overridden_by: current_user.id,
-              overridden_at: Time.current
-            )
-          )
+      # DELETE /api/v1/portfolio_skills/:id/override
+      def revert
+        actions.revert(notes: params[:notes])
+        regenerate_stale_fitgap_reports
+        json_response(override: nil)
+      end
 
-          if new_override.save
-            regenerate_stale_fitgap_reports
-            json_response({ override: override_json(new_override) }, :created)
-          else
-            json_error(new_override.errors.full_messages.first, :unprocessable_entity)
-          end
-        end
+      # POST /api/v1/portfolio_skills/:id/confirm
+      def confirm
+        event = actions.confirm(notes: params[:notes])
+        json_response({ event: event_json(event) }, :created)
+      end
+
+      # GET /api/v1/portfolio_skills/:id/override_events
+      def override_events
+        json_response(events: @portfolio_skill.override_events.reverse.map(&method(:event_json)))
       end
 
       private
@@ -53,8 +55,18 @@ module Api
         json_error("Portfolio skill not found", :not_found)
       end
 
-      def override_params
-        params.require(:override).permit(:override_level, :assessor_notes)
+      def actions
+        PortfolioSkills::OverrideActions.new(@portfolio_skill, actor_id: current_user.id)
+      end
+
+      # Accepts the documented names and the original ones (override_level, assessor_notes).
+      def override_param(*keys)
+        attributes = params[:override].presence || {}
+        keys.lazy.map { |key| attributes[key] }.find { |value| !value.nil? }
+      end
+
+      def event_json(event)
+        event.slice(:id, :action, :from_level, :to_level, :ai_level_at_time, :notes, :actor_id, :created_at)
       end
 
       def override_json(override)
@@ -65,7 +77,8 @@ module Api
           override_level:     override.override_level,
           assessor_notes:     override.assessor_notes,
           overridden_by:      override.overridden_by,
-          overridden_at:      override.overridden_at
+          overridden_at:      override.overridden_at,
+          lock_version:       override.lock_version
         }
       end
     end

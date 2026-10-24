@@ -181,6 +181,7 @@ module Api
           skill_label:       skill.skill_label,
           is_discovered:     skill.is_discovered,
           rating_status:     skill.rating_status,
+          assessor_confirmed: skill.assessor_confirmed?,
           not_assessed_reason: skill.not_assessed_reason,
           coverage:          { state: skill.coverage_state, probe_count: skill.probe_count },
           ai_level:          skill.ai_level,
@@ -212,7 +213,8 @@ module Api
           override_level: override.override_level,
           assessor_notes: override.assessor_notes,
           overridden_by:  override.overridden_by,
-          overridden_at:  override.overridden_at
+          overridden_at:  override.overridden_at,
+          lock_version:   override.lock_version
         }
       end
 

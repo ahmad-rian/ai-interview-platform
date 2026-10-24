@@ -39,7 +39,10 @@ Rails.application.routes.draw do
       # Portfolio skills overrides
       resources :portfolio_skills, only: [] do
         member do
-          post :override
+          post   :override
+          delete :override, action: :revert
+          post   :confirm
+          get    :override_events
         end
       end
 
