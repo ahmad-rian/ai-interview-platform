@@ -14,13 +14,6 @@ module Api
           return render json: { status: "generating" }, status: :accepted
         end
 
-        if @portfolio.failed?
-          return json_response(
-            portfolio: portfolio_json(@portfolio),
-            error: @portfolio.generation_error
-          )
-        end
-
         json_response(portfolio: portfolio_json(@portfolio))
       end
 
@@ -173,7 +166,9 @@ module Api
           candidate_id:      portfolio.candidate_id,
           generation_status: portfolio.generation_status,
           generated_at:      portfolio.generated_at,
-          generation_error:  portfolio.generation_error,
+          generation_error_code: portfolio.generation_error_code,
+          generation_error_message: generation_error_message(portfolio.generation_error_code),
+          ratings_validated: portfolio.ratings_validated,
           skills:            portfolio.portfolio_skills.map(&method(:portfolio_skill_json)),
           overrides:         portfolio.assessor_overrides.map(&method(:override_json))
         }
@@ -185,11 +180,28 @@ module Api
           skill_id:          skill.skill_id,
           skill_label:       skill.skill_label,
           is_discovered:     skill.is_discovered,
+          rating_status:     skill.rating_status,
+          not_assessed_reason: skill.not_assessed_reason,
+          coverage:          { state: skill.coverage_state, probe_count: skill.probe_count },
           ai_level:          skill.ai_level,
           ai_confidence:     skill.ai_confidence,
           evidence:          skill.evidence_quotes,
           competency_summary: skill.competency_summary
         }
+      end
+
+      GENERATION_ERROR_MESSAGES = {
+        'timeout'              => 'The AI model took too long to respond. Please retry.',
+        'rate_limited'         => 'The AI model is busy right now. Please retry in a few minutes.',
+        'provider_unavailable' => 'The AI model is temporarily unavailable. Please retry.',
+        'provider_denied'      => 'The AI provider rejected the request. Contact your administrator.',
+        'invalid_output'       => 'The AI returned a result that could not be used. Please retry.',
+        'empty_output'         => 'The AI returned an empty result. Please retry.',
+        'unknown'              => 'Portfolio generation failed. Please retry.'
+      }.freeze
+
+      def generation_error_message(code)
+        GENERATION_ERROR_MESSAGES[code] if code
       end
 
       def override_json(override)

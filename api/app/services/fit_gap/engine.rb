@@ -71,8 +71,12 @@ module FitGap
 
     # Returns portfolio skills with overrides applied.
     def effective_portfolio_skills
-      @portfolio.portfolio_skills.includes(:assessor_override).map do |skill|
+      @portfolio.portfolio_skills.includes(:assessor_override).filter_map do |skill|
         override = skill.assessor_override
+        # A not-assessed skill without an assessor level has no level to compare,
+        # so the vacancy skill falls through to "not_assessed".
+        next if override.nil? && skill.ai_level.nil?
+
         {
           id:              skill.id,
           skill_id:        skill.skill_id,

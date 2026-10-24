@@ -97,14 +97,17 @@ module DevScenarios
     [
       scenario(assessment, vacancy, 'A', 'normal: semua skill dinilai', normal_response('A')),
       scenario(assessment, vacancy, 'B', 'skill vacancy tidak dibahas', not_covered_response,
+               coverage: { 'System Design' => ['not_yet', 0], 'Komunikasi Teknis' => ['initiated', 1] },
                narrative_error: Gemini::HttpClient::TimeoutError.new('fake timeout')),
       scenario(assessment, vacancy, 'C', 'level AI kosong/invalid', invalid_level_response),
-      scenario(assessment, vacancy, 'D', 'confidence rendah', low_confidence_response),
+      scenario(assessment, vacancy, 'D', 'confidence rendah', low_confidence_response,
+               coverage: VACANCY_SKILLS.to_h { |label, _| [label, ['partial', 1]] }),
       override_scenario(assessment, vacancy),
       scenario(assessment, long_vacancy, 'F', 'teks sangat panjang', long_text_response,
                narrative: { 'culture_narrative' => LONG_SUMMARY, 'overall_narrative' => LONG_SUMMARY }),
       failed_scenario(assessment, 'H', 'JSON Gemini rusak (generation_error)', broken_json_response),
-      failed_scenario(assessment, 'I', 'partial write (skill ke-2 invalid)', partial_write_response)
+      failed_scenario(assessment, 'I', 'confidence di luar enum (diabaikan, dihitung dari coverage)',
+                      partial_write_response)
     ]
   end
 
@@ -115,8 +118,9 @@ module DevScenarios
     [scenario(assessment, vacancy, 'G', 'milik Org B (uji lintas tenant)', normal_response('G'))]
   end
 
-  def scenario(assessment, vacancy, code, label, response, narrative: NARRATIVE, narrative_error: nil)
+  def scenario(assessment, vacancy, code, label, response, narrative: NARRATIVE, narrative_error: nil, coverage: {})
     session   = create_session(assessment, code)
+    add_coverage(session, response, coverage)
     portfolio = Portfolios::Generator.new(session: session, gemini_client: FakeGeminiClient.new(response)).call
     yield portfolio if block_given?
 
@@ -139,10 +143,11 @@ module DevScenarios
 
   def failed_scenario(assessment, code, label, response)
     session = create_session(assessment, code)
+    add_coverage(session, response, {})
     begin
       Portfolios::Generator.new(session: session, gemini_client: FakeGeminiClient.new(response)).call
     rescue StandardError
-      # Expected: the generator marks the portfolio failed and re-raises.
+      # The generator marks the portfolio failed; it re-raises only for retryable errors.
       nil
     end
 
@@ -267,6 +272,20 @@ module DevScenarios
     session.transcript_turns.create!(turn_number: 1, speaker: 'ai', text: 'Contoh pertanyaan dari AI.')
     session.transcript_turns.create!(turn_number: 2, speaker: 'candidate', text: "Contoh jawaban Kandidat #{PREFIX} #{code}.")
     session
+  end
+
+  # Coverage maps drive which skills may be rated and their confidence (D-1, D-7).
+  # Every skill in the fake response is covered with 3 probes unless overridden;
+  # extra labels (e.g. vacancy skills never discussed) can be added via overrides.
+  def add_coverage(session, response, overrides)
+    skills = response.is_a?(Hash) ? response.values_at('configured_skills', 'discovered_skills') : [[], []]
+    entries = skills[0].map { |s| [s['skill_label'], false] } + skills[1].map { |s| [s['skill_label'], true] }
+    entries += (overrides.keys - entries.map(&:first)).map { |label| [label, false] }
+
+    entries.each do |label, discovered|
+      state, probes = overrides.fetch(label, ['covered', 3])
+      session.coverage_maps.create!(skill_label: label, is_discovered: discovered, state: state, probe_count: probes)
+    end
   end
 
   def add_override(portfolio, label, level, notes)
