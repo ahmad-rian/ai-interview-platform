@@ -31,6 +31,7 @@ RSpec.describe 'Tenant isolation for portfolio endpoints' do
     {
       reports: FitGapReport.order(:id).pluck(:id, :portfolio_id, :vacancy_id, :generated_at),
       overrides: AssessorOverride.order(:id).pluck(:id, :portfolio_skill_id, :override_level, :assessor_notes),
+      override_events: AssessorOverrideEvent.count,
       portfolio_status: portfolio_a.reload.generation_status
     }
   end
@@ -99,6 +100,28 @@ RSpec.describe 'Tenant isolation for portfolio endpoints' do
     include_examples 'hidden from other organisations', :post,
                      -> { "/api/v1/portfolio_skills/#{skill_a.id}/override" },
                      -> { { override: { override_level: 4, assessor_notes: 'Contoh catatan.' } } }
+  end
+
+  describe 'DELETE /api/v1/portfolio_skills/:id/override' do
+    before do
+      skill_a.create_assessor_override!(ai_level: 3, override_level: 4, assessor_notes: 'Contoh catatan.',
+                                        overridden_by: 1, overridden_at: Time.current)
+    end
+
+    include_examples 'hidden from other organisations', :delete,
+                     -> { "/api/v1/portfolio_skills/#{skill_a.id}/override" },
+                     -> { { notes: 'Contoh catatan revert.' } }
+  end
+
+  describe 'GET /api/v1/portfolio_skills/:id/override_events' do
+    include_examples 'hidden from other organisations', :get,
+                     -> { "/api/v1/portfolio_skills/#{skill_a.id}/override_events" }
+  end
+
+  describe 'POST /api/v1/portfolio_skills/:id/confirm' do
+    include_examples 'hidden from other organisations', :post,
+                     -> { "/api/v1/portfolio_skills/#{skill_a.id}/confirm" },
+                     -> { { notes: 'Contoh konfirmasi.' } }
   end
 
   describe 'intruder pairing their own vacancy with another organisation portfolio' do
