@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_24_000003) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_24_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -104,13 +104,21 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_24_000003) do
   create_table "fit_gap_reports", force: :cascade do |t|
     t.bigint "portfolio_id", null: false
     t.bigint "vacancy_id", null: false
-    t.jsonb "skill_comparisons", null: false
+    t.jsonb "skill_comparisons"
     t.text "culture_narrative"
     t.text "overall_narrative"
     t.datetime "generated_at", default: -> { "now()" }
+    t.string "status", limit: 20, default: "not_requested", null: false
+    t.string "narrative_source", limit: 20
+    t.string "input_digest", limit: 64
+    t.string "error_code", limit: 40
+    t.datetime "requested_at"
+    t.datetime "completed_at"
     t.index ["portfolio_id", "vacancy_id"], name: "index_fit_gap_reports_on_portfolio_id_and_vacancy_id", unique: true
     t.index ["portfolio_id"], name: "index_fit_gap_reports_on_portfolio_id"
     t.index ["vacancy_id"], name: "index_fit_gap_reports_on_vacancy_id"
+    t.check_constraint "narrative_source IS NULL OR (narrative_source::text = ANY (ARRAY['ai'::character varying, 'legacy_fallback'::character varying]::text[]))", name: "chk_fit_gap_reports_narrative_source"
+    t.check_constraint "status::text = ANY (ARRAY['not_requested'::character varying, 'generating'::character varying, 'complete'::character varying, 'failed'::character varying]::text[])", name: "chk_fit_gap_reports_status"
   end
 
   create_table "organizations", force: :cascade do |t|
