@@ -27,6 +27,9 @@ RSpec.describe Portfolios::Generator do
   before do
     create(:assessment_skill, assessment: assessment, skill_label: 'Ruby on Rails')
     create(:coverage_map, session: interview_session, skill_label: 'Ruby on Rails')
+    # Discovered skills get their own coverage entry from the coverage analyzer (PRD-01 section 4).
+    create(:coverage_map, session: interview_session, skill_label: 'Docker', is_discovered: true,
+                          state: 'partial', probe_count: 2)
     create(:transcript_turn, session: interview_session, turn_number: 1, speaker: 'ai', text: 'Contoh pertanyaan AI.')
     create(:transcript_turn, session: interview_session, turn_number: 2, text: 'Contoh jawaban tentang migrasi.')
   end
@@ -45,7 +48,8 @@ RSpec.describe Portfolios::Generator do
   it 'stores discovered skills flagged as discovered and without a skill_id' do
     skill = portfolio.portfolio_skills.find_by!(skill_label: 'Docker')
 
-    expect(skill).to have_attributes(skill_id: nil, is_discovered: true, ai_level: 2, ai_confidence: 'low')
+    # Confidence is computed from coverage (partial, 2 probes = medium, D-7), not taken from the model's "low".
+    expect(skill).to have_attributes(skill_id: nil, is_discovered: true, ai_level: 2, ai_confidence: 'medium')
   end
 
   it 'sends the transcript to the model in a single call' do
