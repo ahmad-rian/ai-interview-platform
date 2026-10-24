@@ -16,14 +16,12 @@ module Api
         override, created = actions.set(level: override_param(:level, :override_level),
                                         notes: override_param(:notes, :assessor_notes),
                                         lock_version: override_param(:lock_version))
-        regenerate_stale_fitgap_reports
         json_response({ override: override_json(override) }, created ? :created : :ok)
       end
 
       # DELETE /api/v1/portfolio_skills/:id/override
       def revert
         actions.revert(notes: params[:notes])
-        regenerate_stale_fitgap_reports
         json_response(override: nil)
       end
 
@@ -39,15 +37,6 @@ module Api
       end
 
       private
-
-      def regenerate_stale_fitgap_reports
-        portfolio = @portfolio_skill.portfolio
-        FitGapReport.where(portfolio_id: portfolio.id).each do |report|
-          vacancy_id = report.vacancy_id
-          report.destroy
-          FitGapGeneratorWorker.perform_async(portfolio.id, vacancy_id)
-        end
-      end
 
       def set_portfolio_skill
         @portfolio_skill = PortfolioSkill.for_tenant(current_tenant_id).find(params[:id])

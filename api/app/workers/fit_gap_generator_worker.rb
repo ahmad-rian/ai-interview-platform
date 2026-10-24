@@ -15,11 +15,19 @@ class FitGapGeneratorWorker
       return
     end
 
+    # Requests claim the report before enqueueing; a job whose report is no
+    # longer claimed is a duplicate and exits (AC-50).
+    report = FitGapReport.find_by(portfolio_id: portfolio.id, vacancy_id: vacancy.id)
+    if report && report.status != 'generating'
+      Rails.logger.info("[N13] Skipped fit/gap: report #{report.id} is #{report.status}")
+      return
+    end
+
     FitGap::Engine.new(portfolio: portfolio, vacancy: vacancy).call
   rescue ActiveRecord::RecordNotFound => e
     Rails.logger.warn("[N13] Record not found: #{e.message}")
   rescue StandardError => e
-    Rails.logger.error("[N13] FitGapGeneratorWorker failed for portfolio=#{portfolio_id} vacancy=#{vacancy_id}: #{e.class}: #{e.message}")
+    Rails.logger.error("[N13] FitGapGeneratorWorker failed for portfolio=#{portfolio_id} vacancy=#{vacancy_id}: #{e.class}")
     raise
   end
 end

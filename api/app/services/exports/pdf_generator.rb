@@ -29,7 +29,9 @@ module Exports
       Prawn::Document.new(page_size: 'A4', margin: [40, 50, 40, 50]) do |pdf|
         render_header(pdf)
         render_portfolio_section(pdf)
-        render_fit_gap_section(pdf) if @fit_gap
+        # Reports without a narrative have no snapshot yet; the PDF moves to the
+        # shared presenter in the PDF slice.
+        render_fit_gap_section(pdf) if @fit_gap&.skill_comparisons.present?
         render_footer(pdf)
       end.render
     end

@@ -272,22 +272,7 @@ module Portfolios
     end
 
     def error_code(error)
-      case error
-      when OutputError then error.code
-      when Gemini::HttpClient::TimeoutError then 'timeout'
-      when Gemini::HttpClient::RateLimitError then 'rate_limited'
-      when Gemini::HttpClient::ApiError then api_error_code(error.status)
-      else 'unknown'
-      end
-    end
-
-    def api_error_code(status)
-      case status
-      when 401, 403 then 'provider_denied'
-      when 429 then 'rate_limited'
-      when 500..599 then 'provider_unavailable'
-      else 'unknown'
-      end
+      error.is_a?(OutputError) ? error.code : Gemini::ErrorCode.for(error)
     end
   end
 end
