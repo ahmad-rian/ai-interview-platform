@@ -8,7 +8,9 @@ module Api
       before_action :set_portfolio_skill
 
       rescue_from PortfolioSkills::OverrideActions::Error do |error|
-        json_error(error.message, error.status)
+        status = Rack::Utils.status_code(error.status)
+        render json: { errors: [{ status: status, message: error.message, code: error.code }.compact] },
+               status: error.status
       end
 
       # POST /api/v1/portfolio_skills/:id/override

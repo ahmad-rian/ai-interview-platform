@@ -6,10 +6,11 @@ module PortfolioSkills
   class OverrideActions
     # Raised with the HTTP status the controller should answer with.
     class Error < StandardError
-      attr_reader :status
+      attr_reader :status, :code
 
-      def initialize(message, status: :unprocessable_entity)
+      def initialize(message, status: :unprocessable_entity, code: nil)
         @status = status
+        @code   = code
         super(message)
       end
     end
@@ -58,6 +59,12 @@ module PortfolioSkills
       raise Error, 'This skill already has an assessor override' if @skill.assessor_override
 
       notes = notes.to_s.strip.presence
+      # Confirming thin evidence moves the skill into the fit totals, so the
+      # assessor must record why (same rule as an override).
+      if @skill.ai_confidence == 'low' && notes.nil?
+        raise Error.new('A note is required to confirm a low-confidence rating', code: 'note_required')
+      end
+
       validate_length(notes)
       record('confirm', from: @skill.ai_level, to: @skill.ai_level, notes: notes)
     end
