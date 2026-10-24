@@ -2,6 +2,7 @@
 
 require 'rails_helper'
 require Rails.root.join('db/migrate/20261024000001_allow_not_assessed_portfolio_skills')
+require Rails.root.join('db/migrate/20261024000003_add_override_history')
 
 # The test database is already migrated; each example runs the migration
 # down and up inside the example transaction (Postgres DDL is transactional).
@@ -23,6 +24,10 @@ RSpec.describe AllowNotAssessedPortfolioSkills do
   end
 
   it 'keeps legacy rows assessed and backfills the coverage snapshot from coverage maps' do
+    # Later migrations depend on this one, so they are rolled back first and
+    # re-applied afterwards, in the same order as a real deploy.
+    later = AddOverrideHistory.new
+    later.migrate(:down)
     migration.migrate(:down)
     PortfolioSkill.reset_column_information
     portfolio = create(:portfolio)
@@ -33,6 +38,7 @@ RSpec.describe AllowNotAssessedPortfolioSkills do
     SQL
 
     migration.migrate(:up)
+    later.migrate(:up)
     PortfolioSkill.reset_column_information
 
     expect(PortfolioSkill.find_by!(portfolio_id: portfolio.id))
