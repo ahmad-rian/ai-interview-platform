@@ -4,7 +4,14 @@ import ConfidenceIndicator from "./ConfidenceIndicator";
 import OverridePanel from "./OverridePanel";
 import { Zap } from "lucide-react";
 import { parseLevel } from "@/utils/constants";
-import type { PortfolioSkill, AssessorOverride } from "@/types";
+import type { PortfolioSkill, AssessorOverride, NotAssessedReason } from "@/types";
+
+const NOT_ASSESSED_MESSAGES: Record<NotAssessedReason, string> = {
+  not_covered: "Not covered in the interview. Probe this skill in the next interview.",
+  no_level_from_model: "The AI did not return a rating. Review the transcript or rate manually.",
+  invalid_level_from_model: "The AI returned an unusable rating. Review the transcript or rate manually.",
+  no_evidence: "No candidate quote supports a rating. Review the transcript or rate manually.",
+};
 
 interface SkillPortfolioCardProps {
   skill: PortfolioSkill;
@@ -35,11 +42,18 @@ export default function SkillPortfolioCard({
                   </span>
                 )}
               </div>
-              <ConfidenceIndicator confidence={skill.ai_confidence} />
+              {skill.ai_confidence && <ConfidenceIndicator confidence={skill.ai_confidence} />}
             </div>
           </div>
           <OverridePanel skill={skill} existingOverride={override} onSaved={onOverrideSaved} />
         </div>
+
+        {/* Not assessed: say why instead of showing a level */}
+        {skill.rating_status === "not_assessed" && !override && (
+          <p className="text-sm text-muted-foreground">
+            {NOT_ASSESSED_MESSAGES[skill.not_assessed_reason ?? "not_covered"]}
+          </p>
+        )}
 
         {/* Low confidence note */}
         {skill.ai_confidence?.toLowerCase() === "low" && (

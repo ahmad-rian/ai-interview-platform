@@ -17,7 +17,8 @@ interface OverridePanelProps {
 
 export default function OverridePanel({ skill, existingOverride, onSaved }: OverridePanelProps) {
   const [open, setOpen] = useState(false);
-  const [overrideLevel, setOverrideLevel] = useState(existingOverride?.override_level ?? parseLevel(skill.ai_level));
+  // 0 = nothing selected yet (a not-assessed skill has no AI level to start from).
+  const [overrideLevel, setOverrideLevel] = useState(existingOverride?.override_level ?? parseLevel(skill.ai_level) ?? 0);
   const [notes, setNotes] = useState(existingOverride?.assessor_notes ?? "");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -94,7 +95,7 @@ export default function OverridePanel({ skill, existingOverride, onSaved }: Over
 
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button size="sm" onClick={handleSave} disabled={saving || overrideLevel < 1}>
           {saving && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
           Save override
         </Button>

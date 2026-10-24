@@ -80,7 +80,9 @@ export interface Portfolio {
   candidate_id?: number;
   generation_status: "pending" | "generating" | "complete" | "failed";
   generated_at?: string;
-  generation_error?: string;
+  generation_error_code?: string | null;
+  generation_error_message?: string | null;
+  ratings_validated?: boolean;
   skills: PortfolioSkill[];
   overrides: AssessorOverride[];
 }
@@ -90,11 +92,16 @@ export interface PortfolioSkill {
   skill_id?: number;
   skill_label: string;
   is_discovered: boolean;
-  ai_level: string;       // "L1" | "L2" | "L3" | "L4" | "L5"
-  ai_confidence: string;  // "high" | "medium" | "low"
+  rating_status: "assessed" | "not_assessed";
+  not_assessed_reason?: NotAssessedReason | null;
+  coverage?: { state: string | null; probe_count: number | null };
+  ai_level: number | null;                             // integer 1..5, null when not assessed
+  ai_confidence: "high" | "medium" | "low" | null;     // computed from coverage, null when not assessed
   evidence: string[];
   competency_summary: string;
 }
+
+export type NotAssessedReason = "not_covered" | "no_level_from_model" | "invalid_level_from_model" | "no_evidence";
 
 export interface AssessorOverride {
   id: number;
