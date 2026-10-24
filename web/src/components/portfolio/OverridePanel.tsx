@@ -21,22 +21,25 @@ export default function OverridePanel({ skill, existingOverride, onSaved }: Over
   const [overrideLevel, setOverrideLevel] = useState(existingOverride?.override_level ?? parseLevel(skill.ai_level) ?? 0);
   const [notes, setNotes] = useState(existingOverride?.assessor_notes ?? "");
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const hasOverride = !!existingOverride;
 
   const handleSave = async () => {
     setSaving(true);
-    setSaveError(false);
+    setSaveError(null);
     try {
       const res = await portfoliosApi.getOverride(skill.id, {
         override_level: overrideLevel,
-        assessor_notes: notes,
+        assessor_notes: notes.trim(),
+        lock_version: existingOverride?.lock_version,
       });
       onSaved(res.data.override);
       setOpen(false);
-    } catch {
-      setSaveError(true);
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { errors?: { message?: string }[] } } })
+        ?.response?.data?.errors?.[0]?.message;
+      setSaveError(message ?? "Failed to save override. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -79,23 +82,25 @@ export default function OverridePanel({ skill, existingOverride, onSaved }: Over
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor={`notes-${skill.id}`} className="text-sm">Notes (optional):</Label>
+        <Label htmlFor={`notes-${skill.id}`} className="text-sm">Reason for the change (required):</Label>
         <Textarea
           id={`notes-${skill.id}`}
+          required
+          maxLength={2000}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          placeholder="Add context for your override..."
+          placeholder="What evidence supports this rating?"
         />
       </div>
 
       {saveError && (
-        <p className="text-xs text-destructive">Failed to save override. Please try again.</p>
+        <p className="text-xs text-destructive" role="alert">{saveError}</p>
       )}
 
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
-        <Button size="sm" onClick={handleSave} disabled={saving || overrideLevel < 1}>
+        <Button size="sm" onClick={handleSave} disabled={saving || overrideLevel < 1 || notes.trim() === ""}>
           {saving && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
           Save override
         </Button>

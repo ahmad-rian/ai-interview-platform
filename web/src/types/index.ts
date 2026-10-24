@@ -111,6 +111,7 @@ export interface AssessorOverride {
   assessor_notes: string;
   overridden_by?: number;
   overridden_at?: string;
+  lock_version?: number;
 }
 
 export interface Vacancy {
