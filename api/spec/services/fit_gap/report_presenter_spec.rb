@@ -84,7 +84,7 @@ RSpec.describe FitGap::ReportPresenter do
     end
 
     it 'marks an AI level confirmed by an assessor as human reviewed and counts it' do
-      PortfolioSkills::OverrideActions.new(skill, actor_id: 7).confirm
+      PortfolioSkills::OverrideActions.new(skill, actor_id: 7).confirm(notes: 'Contoh: bukti cukup dari studi kasus.')
 
       expect(row('SQL')).to include(candidate_level: 2, ai_level: 2, level_source: 'assessor_confirmed',
                                     is_override: false, result: 'gap', counts_toward_fit: true)

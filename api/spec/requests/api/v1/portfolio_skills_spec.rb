@@ -146,6 +146,32 @@ RSpec.describe 'Portfolio skill overrides' do
       expect(skill.reload).to have_attributes(ai_level: 2, assessor_override: nil)
     end
 
+    # Confirming a low-confidence rating moves it from follow-up into the fit
+    # totals, so the human review must say why (Pasal 10), as for overrides.
+    it 'requires a note to confirm a low-confidence rating' do
+      skill.update!(ai_confidence: 'low')
+
+      confirm!
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body.dig('errors', 0, 'code')).to eq('note_required')
+      expect(events).to be_empty
+
+      confirm!(notes: '  ')
+      expect(response).to have_http_status(:unprocessable_entity)
+
+      confirm!(notes: 'Contoh: bukti tambahan dari tugas tertulis.')
+      expect(response).to have_http_status(:created)
+      expect(events.last).to have_attributes(action: 'confirm', notes: 'Contoh: bukti tambahan dari tugas tertulis.')
+    end
+
+    it 'still allows confirming a high-confidence rating without a note' do
+      skill.update!(ai_confidence: 'high')
+
+      confirm!
+
+      expect(response).to have_http_status(:created)
+    end
+
     it 'cannot confirm a not-assessed skill' do
       skill.update!(rating_status: 'not_assessed', not_assessed_reason: 'not_covered', ai_level: nil, ai_confidence: nil)
 
