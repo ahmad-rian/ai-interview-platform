@@ -9,6 +9,9 @@ class Portfolio < ApplicationRecord
 
   validates :generation_status, inclusion: { in: GENERATION_STATUSES }
 
+  # Portfolios have no tenant column; ownership comes from the interview session.
+  scope :for_tenant, ->(tenant_id) { joins(:session).where(sessions: { tenant_id: tenant_id }) }
+
   scope :complete,    -> { where(generation_status: 'complete') }
   scope :failed,      -> { where(generation_status: 'failed') }
   scope :generating,  -> { where(generation_status: 'generating') }
