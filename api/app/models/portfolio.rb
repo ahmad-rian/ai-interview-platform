@@ -2,12 +2,15 @@
 
 class Portfolio < ApplicationRecord
   GENERATION_STATUSES = %w[pending generating complete failed].freeze
+  ERROR_CODES = %w[timeout rate_limited provider_denied provider_unavailable
+                   invalid_output empty_output unknown].freeze
 
   belongs_to :session
   has_many :portfolio_skills, dependent: :destroy
   has_many :assessor_overrides, through: :portfolio_skills
 
   validates :generation_status, inclusion: { in: GENERATION_STATUSES }
+  validates :generation_error_code, inclusion: { in: ERROR_CODES }, allow_nil: true
 
   # Portfolios have no tenant column; ownership comes from the interview session.
   scope :for_tenant, ->(tenant_id) { joins(:session).where(sessions: { tenant_id: tenant_id }) }
