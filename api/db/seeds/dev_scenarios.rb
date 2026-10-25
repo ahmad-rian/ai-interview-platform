@@ -93,9 +93,11 @@ module DevScenarios
     assessment   = create_assessment("#{PREFIX} Assessment Backend", VACANCY_SKILLS.map(&:first))
     vacancy      = create_vacancy("#{PREFIX} Backend Engineer", VACANCY_SKILLS)
     long_vacancy = create_vacancy("#{PREFIX} SRE Engineer (teks panjang)", [[LONG_LABEL, 3], ['Ruby on Rails', 3]])
+    empty_vacancy = create_vacancy("#{PREFIX} Vacancy tanpa skill", [])
 
+    normal = scenario(assessment, vacancy, 'A', 'normal: semua skill dinilai', normal_response('A'))
     [
-      scenario(assessment, vacancy, 'A', 'normal: semua skill dinilai', normal_response('A')),
+      normal,
       scenario(assessment, vacancy, 'B', 'skill vacancy tidak dibahas', not_covered_response,
                coverage: { 'System Design' => ['not_yet', 0], 'Komunikasi Teknis' => ['initiated', 1] },
                narrative_error: Gemini::HttpClient::TimeoutError.new('fake timeout')),
@@ -107,8 +109,31 @@ module DevScenarios
                narrative: { 'culture_narrative' => LONG_SUMMARY, 'overall_narrative' => LONG_SUMMARY }),
       failed_scenario(assessment, 'H', 'JSON Gemini rusak (generation_error)', broken_json_response),
       failed_scenario(assessment, 'I', 'confidence di luar enum (diabaikan, dihitung dari coverage)',
-                      partial_write_response)
+                      partial_write_response),
+      scenario(assessment, vacancy, 'J', 'portfolio lama (legacy)', normal_response('J')) do |portfolio|
+        portfolio.update_columns(ratings_validated: false)
+      end,
+      outdated_scenario(assessment, vacancy),
+      empty_portfolio_scenario(assessment, vacancy),
+      normal.merge(code: 'M', label: 'vacancy tanpa skill', vacancy: empty_vacancy, report: nil),
+      normal.merge(code: 'N', label: 'narasi belum diminta', vacancy: long_vacancy, report: nil)
     ]
+  end
+
+  # A rating changes after the narrative was written, so the narrative is outdated.
+  def outdated_scenario(assessment, vacancy)
+    result = scenario(assessment, vacancy, 'K', 'narasi outdated', normal_response('K'))
+    add_override(result[:portfolio], 'API Design', 2, 'Contoh catatan: diturunkan setelah narasi ditulis.')
+    result
+  end
+
+  # A complete portfolio in which no skill was rated at all.
+  def empty_portfolio_scenario(assessment, vacancy)
+    session = create_session(assessment, 'L')
+    portfolio = Portfolio.create!(session: session, generation_status: 'complete', generated_at: Time.current,
+                                  ratings_validated: true)
+    { code: 'L', label: 'portfolio tanpa skill', assessment: assessment, session: session,
+      portfolio: portfolio, vacancy: vacancy, report: nil }
   end
 
   def seed_tenant_b
