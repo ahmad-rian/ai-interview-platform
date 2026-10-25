@@ -91,7 +91,12 @@ module FitGap
         override_notes: view&.override&.assessor_notes,
         confidence: view&.confidence,
         not_assessed_reason: nil,
-        tentative_direction: nil
+        tentative_direction: nil,
+        # Link to the portfolio skill (evidence, summary) and its review trail,
+        # so clients never match rows to skills by label themselves.
+        portfolio_skill_id: skill&.id,
+        probe_count: skill&.probe_count,
+        review: view&.review
       }
       return base.merge(result: 'not_assessed', delta: nil, counts_toward_fit: false,
                         not_assessed_reason: skill&.not_assessed_reason || 'not_covered') if level.nil?
