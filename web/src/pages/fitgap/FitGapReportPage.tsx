@@ -155,7 +155,7 @@ export default function FitGapReportPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {(["pdf", "json"] as const).map((format) => (
-            <Button key={format} variant="outline" size="sm"
+            <Button key={format} variant={format === "pdf" ? "default" : "outline"} size="sm"
                     onClick={() => handleExport(format)} disabled={!report}
                     aria-disabled={exporting !== null || undefined} className="aria-disabled:cursor-wait aria-disabled:opacity-60">
               {exporting === format ? <Loader2 aria-hidden="true" className="animate-spin" /> : <FileDown aria-hidden="true" />}
