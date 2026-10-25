@@ -50,15 +50,7 @@ module Api
           return json_error("Portfolio is not ready for export (status: #{@portfolio.generation_status})", :unprocessable_entity)
         end
 
-        if format == "pdf"
-          vacancy = params[:vacancy_id].present? ? Vacancy.find_by(id: params[:vacancy_id]) : nil
-          pdf_data = Exports::PdfGenerator.new(portfolio: @portfolio, vacancy: vacancy).call
-
-          return send_data pdf_data,
-                           filename:    "portfolio-#{@portfolio.id}.pdf",
-                           type:        "application/pdf",
-                           disposition: "attachment"
-        end
+        return export_pdf if format == "pdf"
 
         # JSON export
         vacancy_id = params[:vacancy_id]
@@ -90,6 +82,23 @@ module Api
       end
 
       private
+
+      # A rendering error answers with a code and a safe message; the log keeps
+      # the error class only, because the message can contain candidate text.
+      def export_pdf
+        vacancy = params[:vacancy_id].present? ? Vacancy.find_by(id: params[:vacancy_id]) : nil
+        pdf_data = Exports::PdfGenerator.new(portfolio: @portfolio, vacancy: vacancy).call
+
+        send_data pdf_data,
+                  filename:    "portfolio-#{@portfolio.id}.pdf",
+                  type:        "application/pdf",
+                  disposition: "attachment"
+      rescue StandardError => e
+        Rails.logger.error("[PortfoliosController] PDF export failed portfolio=#{@portfolio.id} error=#{e.class}")
+        render json: { errors: [{ status: 500, code: "pdf_render_failed",
+                                  message: "The PDF could not be created. Try again or export JSON instead." }] },
+               status: :internal_server_error
+      end
 
       NARRATIVE_CLAIM_TIMEOUT = 2.minutes # 2x the fit/gap Gemini timeout plus margin
 

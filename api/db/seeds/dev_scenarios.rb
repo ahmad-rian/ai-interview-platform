@@ -133,11 +133,13 @@ module DevScenarios
 
   # Overrides go through the same service as the API (with the required note
   # and a history event) before the fit/gap report is built, so the report
-  # reflects them. One raises a level, one lowers it.
+  # reflects them. One raises a level, one lowers it, and one AI level is
+  # confirmed, so the screens and the PDF show all three review markers.
   def override_scenario(assessment, vacancy)
-    scenario(assessment, vacancy, 'E', 'override asesor', normal_response('E')) do |portfolio|
+    scenario(assessment, vacancy, 'E', 'override dan konfirmasi asesor', normal_response('E')) do |portfolio|
       add_override(portfolio, 'SQL & Data Modeling', 3, 'Contoh catatan: bukti tambahan dari studi kasus tertulis.')
       add_override(portfolio, 'Komunikasi Teknis', 1, 'Contoh catatan: diturunkan setelah diskusi panel.')
+      add_confirm(portfolio, 'Ruby on Rails', 'Contoh catatan: bukti cukup dari jawaban kandidat.')
     end
   end
 
@@ -291,6 +293,11 @@ module DevScenarios
   def add_override(portfolio, label, level, notes)
     skill = portfolio.portfolio_skills.find_by!(skill_label: label)
     PortfolioSkills::OverrideActions.new(skill, actor_id: ASSESSOR_ID).set(level: level, notes: notes)
+  end
+
+  def add_confirm(portfolio, label, notes)
+    skill = portfolio.portfolio_skills.find_by!(skill_label: label)
+    PortfolioSkills::OverrideActions.new(skill, actor_id: ASSESSOR_ID).confirm(notes: notes)
   end
 
   def print_summary(results)

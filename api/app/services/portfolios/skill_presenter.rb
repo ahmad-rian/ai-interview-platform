@@ -38,6 +38,19 @@ module Portfolios
       @skill.assessor_override
     end
 
+    # The human decision behind the effective level: who, when, why and which
+    # AI level it was about. nil when no assessor reviewed the current level.
+    def review
+      if override
+        { action: 'override', ai_level: override.ai_level, notes: override.assessor_notes,
+          actor_id: override.overridden_by, at: override.overridden_at }
+      elsif level_source == 'assessor_confirmed'
+        event = @skill.override_events.last
+        { action: 'confirm', ai_level: event.ai_level_at_time, notes: event.notes,
+          actor_id: event.actor_id, at: event.created_at }
+      end
+    end
+
     def as_json(*)
       {
         id: @skill.id,
@@ -52,6 +65,7 @@ module Portfolios
         effective_level: effective_level,
         level_source: level_source,
         assessor_confirmed: @skill.assessor_confirmed?,
+        review: review,
         evidence: @skill.evidence_quotes,
         competency_summary: @skill.competency_summary
       }
