@@ -33,6 +33,29 @@ RSpec.describe 'Fit/gap API' do
     expect(report.dig('narrative', 'status')).to eq('not_requested')
   end
 
+  # The report links each row to its portfolio skill so the page can show the
+  # evidence and the review trail without matching labels itself.
+  it 'links each comparison to its portfolio skill with the probe count and review' do
+    skill.update!(coverage_state: 'partial', probe_count: 2)
+    travel_to(Time.utc(2026, 10, 25, 8, 0)) do
+      PortfolioSkills::OverrideActions.new(skill, actor_id: 7).set(level: 4, notes: 'Contoh: tugas tertulis.')
+    end
+
+    row = show['comparisons'].first
+
+    expect(row).to include('portfolio_skill_id' => skill.id, 'probe_count' => 2)
+    expect(row['review']).to include('action' => 'override', 'ai_level' => 3, 'notes' => 'Contoh: tugas tertulis.',
+                                     'actor_id' => 7, 'at' => '2026-10-25T08:00:00.000Z')
+  end
+
+  it 'has no portfolio skill link for a required skill the portfolio does not have' do
+    create(:vacancy_skill, vacancy: vacancy, skill_label: 'System Design', expected_level: 4)
+
+    row = show['comparisons'].find { |c| c['skill_label'] == 'System Design' }
+
+    expect(row).to include('portfolio_skill_id' => nil, 'probe_count' => nil, 'review' => nil)
+  end
+
   it 'enqueues exactly one narrative job for repeated requests (AC-46)' do
     request_narrative
     expect(response).to have_http_status(:accepted)
