@@ -8,7 +8,7 @@ import { sessionsApi } from "@/services/sessions";
 vi.mock("@/services/portfolios", () => ({
     portfoliosApi: { getFitGap: vi.fn(), triggerFitGap: vi.fn(), regenerateFitGap: vi.fn(), exportPortfolio: vi.fn() },
 }));
-vi.mock("@/services/sessions", () => ({ sessionsApi: { getPortfolio: vi.fn() } }));
+vi.mock("@/services/sessions", () => ({ sessionsApi: { getPortfolio: vi.fn(), get: vi.fn() } }));
 
 function report(status: string) {
     return {
@@ -40,11 +40,14 @@ function renderPage() {
     );
 }
 
+const sessionResponse = { data: { session: { id: 2, candidate_name: "Kandidat Contoh A" }, assessment: { id: 1, name: "Contoh" } } };
+
 // AC-95 / D1: polling only reads; it never enqueues a job, and stops on a final state.
 describe("FitGapReportPage", () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.mocked(sessionsApi.getPortfolio).mockResolvedValue({ data: { portfolio: { id: 5, skills: [] } } } as never);
+        vi.mocked(sessionsApi.get).mockResolvedValue(sessionResponse as never);
     });
     afterEach(() => {
         vi.useRealTimers();
