@@ -97,6 +97,10 @@ export interface PortfolioSkill {
   coverage?: { state: string | null; probe_count: number | null };
   ai_level: number | null;                             // integer 1..5, null when not assessed
   ai_confidence: "high" | "medium" | "low" | null;     // computed from coverage, null when not assessed
+  effective_level?: number | null;
+  level_source?: LevelSource | null;
+  assessor_confirmed?: boolean;
+  review?: SkillReview | null;
   evidence: string[];
   competency_summary: string;
 }
@@ -137,6 +141,15 @@ export type SkillComparisonResult = "match" | "gap" | "exceed" | "not_assessed" 
 export type LevelSource = "ai" | "assessor_confirmed" | "assessor_override";
 
 // Mirrors FitGap::ReportPresenter (api/app/services/fit_gap/report_presenter.rb).
+// The assessor decision behind a level (same shape as the API "review").
+export interface SkillReview {
+  action: "override" | "confirm";
+  ai_level: number | null;
+  notes: string | null;
+  actor_id: number;
+  at: string;
+}
+
 export interface SkillComparison {
   skill_label: string;
   skill_id?: string | null;
@@ -152,6 +165,9 @@ export interface SkillComparison {
   counts_toward_fit: boolean;
   not_assessed_reason?: NotAssessedReason | null;
   tentative_direction?: "below" | "equal" | "above" | null;
+  portfolio_skill_id?: number | null;
+  probe_count?: number | null;
+  review?: SkillReview | null;
 }
 
 export interface FitGapSummary {
