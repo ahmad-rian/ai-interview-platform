@@ -158,13 +158,20 @@ export default function LiveMonitorPage() {
 
         <div className="flex items-center gap-3">
           {startedAt && sessionActive && <ElapsedTimer startedAt={startedAt} />}
-          <span className={cn(
-            "flex items-center gap-1 text-xs",
-            isConnected ? "text-green-600" : "text-muted-foreground"
-          )}>
-            <Radio className="h-3 w-3" />
-            {isConnected ? "Live" : "Reconnecting..."}
-          </span>
+          {sessionActive ? (
+            <span className={cn(
+              "flex items-center gap-1 text-xs",
+              isConnected ? "text-green-600" : "text-muted-foreground"
+            )}>
+              <Radio className="h-3 w-3" />
+              {isConnected ? "Live" : "Reconnecting..."}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <CheckCircle aria-hidden="true" className="h-3 w-3" />
+              Ended
+            </span>
+          )}
         </div>
       </div>
 
@@ -276,7 +283,7 @@ export default function LiveMonitorPage() {
           ) : (
             <div className="space-y-2">
               {transcript.map((turn) => (
-                <TranscriptBubble key={turn.id} speaker={turn.speaker} text={turn.text} />
+                <TranscriptBubble key={turn.id} speaker={turn.speaker} text={turn.text} candidateLabel="Candidate" />
               ))}
             </div>
           )}
