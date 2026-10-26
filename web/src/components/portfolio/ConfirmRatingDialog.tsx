@@ -70,7 +70,7 @@ const ConfirmRatingDialog = forwardRef<HTMLButtonElement, ConfirmRatingDialogPro
       <DialogTrigger asChild>
         <Button ref={triggerRef} variant="outline" size="sm">
           <CheckCheck aria-hidden="true" />
-          Confirm AI rating
+          Confirm AI rating{" "}<span className="sr-only">for {skill.skill_label}</span>
         </Button>
       </DialogTrigger>
       {/* After a confirmation this trigger disappears; the card moves focus itself. */}

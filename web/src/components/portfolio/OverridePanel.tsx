@@ -100,6 +100,8 @@ const OverridePanel = forwardRef<HTMLButtonElement, OverridePanelProps>(function
         <Button ref={triggerRef} variant="outline" size="sm">
           <Pencil aria-hidden="true" />
           {triggerLabel}
+          {/* Every card has this button; the hidden suffix tells them apart for screen readers. */}
+          {" "}<span className="sr-only">for {skill.skill_label}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -117,7 +119,7 @@ const OverridePanel = forwardRef<HTMLButtonElement, OverridePanelProps>(function
         <form onSubmit={handleSave} className="space-y-4" noValidate>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Your rating</legend>
-            <LevelRadio value={level} onChange={setLevel} />
+            <LevelRadio value={level} onChange={setLevel} label={`New level for ${skill.skill_label}`} />
           </fieldset>
 
           <p aria-live="polite" className="text-sm font-medium">

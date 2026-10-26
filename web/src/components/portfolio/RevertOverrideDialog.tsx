@@ -62,7 +62,7 @@ export default function RevertOverrideDialog({ skill, onReverted }: RevertOverri
       <AlertDialogTrigger asChild>
         <Button variant="ghost" size="sm">
           <Undo2 aria-hidden="true" />
-          Undo override
+          Undo override{" "}<span className="sr-only">for {skill.skill_label}</span>
         </Button>
       </AlertDialogTrigger>
       {/* After undoing, this trigger disappears; the card moves focus itself. */}
