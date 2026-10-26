@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import {
@@ -16,6 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -36,6 +37,7 @@ export default function AssessmentEditPage() {
   const [submitting, setSubmitting] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const form = useForm<AssessmentFormValues>({
     defaultValues: { name: "", time_limit_min: 45, skills: [] },
@@ -44,16 +46,21 @@ export default function AssessmentEditPage() {
   const { register, handleSubmit, control, setValue, reset, formState: { errors } } = form;
   const { fields, append, remove, move } = useFieldArray({ control, name: "skills" });
 
-  useEffect(() => {
+  // A failed load shows an error instead of an empty form that could be saved.
+  const load = useCallback(() => {
+    setLoading(true);
+    setLoadFailed(false);
     assessmentsApi
       .get(Number(id))
       .then((res) => {
         const a = res.data.assessment;
         reset({ name: a.name, time_limit_min: a.time_limit_min, skills: a.skills });
       })
-      .catch(() => {})
+      .catch(() => setLoadFailed(true))
       .finally(() => setLoading(false));
   }, [id, reset]);
+
+  useEffect(load, [load]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -94,6 +101,14 @@ export default function AssessmentEditPage() {
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-40" />
         <Skeleton className="h-24 w-full" />
+      </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <ErrorState title="Could not load this assessment" description="Nothing was changed. Try again to edit it." onRetry={load} />
       </div>
     );
   }
