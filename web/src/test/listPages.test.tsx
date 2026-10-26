@@ -19,6 +19,8 @@ vi.mock("@/services/assessments", () => ({ assessmentsApi: { list: vi.fn(), get:
 vi.mock("@/services/vacancies", () => ({ vacanciesApi: { list: vi.fn() } }));
 vi.mock("@/services/sessions", () => ({ sessionsApi: { get: vi.fn(), getTranscript: vi.fn(), endSession: vi.fn() } }));
 vi.mock("@/hooks/useCoverageWebSocket", () => ({ useCoverageWebSocket: vi.fn() }));
+// The assessments page also loads the review queue (slice 8); never over the network in tests.
+vi.mock("@/services/reviewQueue", () => ({ reviewQueueApi: { list: vi.fn(() => new Promise(() => {})) } }));
 
 beforeEach(() => {
     vi.mocked(assessmentsApi.list).mockResolvedValue(ok({ assessments: [ASSESSMENT] }));
