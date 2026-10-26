@@ -3,16 +3,18 @@ import { cn } from "@/lib/utils";
 const LEVELS = [1, 2, 3, 4, 5] as const;
 
 export interface LevelScaleProps {
-  required: number;
+  required?: number | null;
   candidate: number | null;
   className?: string;
 }
 
 // L1 to L5 drawn without relying on colour: squares are filled up to the
 // candidate level (hollow when not assessed) and a bar above marks the
-// required level. Screen readers get the same information as one sentence.
+// required level, when there is one. Screen readers get the same
+// information as one sentence.
 export function LevelScale({ required, candidate, className }: LevelScaleProps) {
-  const label = `Required L${required}, candidate ${candidate ? `L${candidate}` : "not assessed"}`;
+  const level = candidate ? `L${candidate}` : "not assessed";
+  const label = required ? `Required L${required}, candidate ${level}` : candidate ? `Level ${level}` : "Not assessed";
 
   return (
     <div role="img" aria-label={label} className={cn("inline-flex items-end gap-1", className)}>

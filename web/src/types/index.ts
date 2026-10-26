@@ -150,6 +150,18 @@ export interface SkillReview {
   at: string;
 }
 
+// One append-only assessor decision on a skill (GET /portfolio_skills/:id/override_events).
+export interface OverrideEvent {
+  id: number;
+  action: "set" | "revert" | "confirm";
+  from_level: number | null;
+  to_level: number | null;
+  ai_level_at_time: number | null;
+  notes: string | null;
+  actor_id: number;
+  created_at: string;
+}
+
 export interface SkillComparison {
   skill_label: string;
   skill_id?: string | null;

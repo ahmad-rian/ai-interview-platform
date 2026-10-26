@@ -13,7 +13,10 @@ export interface ApiErrorInfo {
 }
 
 interface ErrorShape {
-  response?: { status?: number; data?: { code?: string; generation_status?: string } };
+  response?: {
+    status?: number;
+    data?: { code?: string; generation_status?: string; errors?: { message?: string; code?: string }[] };
+  };
 }
 
 export function classifyApiError(error: unknown): ApiErrorInfo {
@@ -27,4 +30,15 @@ export function classifyApiError(error: unknown): ApiErrorInfo {
   }
   if (response.status === 404) return { kind: "not_found" };
   return { kind: "server" };
+}
+
+// The safe message the API returns for a validation error (422), if any.
+export function validationMessage(error: unknown): string | null {
+  const response = (error as ErrorShape | null)?.response;
+  if (response?.status !== 422) return null;
+  return response.data?.errors?.[0]?.message ?? null;
+}
+
+export function isConflict(error: unknown): boolean {
+  return (error as ErrorShape | null)?.response?.status === 409;
 }
