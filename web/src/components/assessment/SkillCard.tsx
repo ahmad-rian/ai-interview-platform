@@ -43,7 +43,7 @@ export default function SkillCard({ index, id, form, onRemove }: SkillCardProps)
       <div className="flex items-center gap-2 px-3 py-2.5">
         <button
           type="button"
-          className="cursor-grab rounded-sm text-muted-foreground hover:text-foreground touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="touch-target cursor-grab rounded-sm text-muted-foreground hover:text-foreground touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           {...attributes}
           {...listeners}
           aria-label={`Reorder ${skillLabel}`}
@@ -63,7 +63,7 @@ export default function SkillCard({ index, id, form, onRemove }: SkillCardProps)
         <button
           type="button"
           onClick={onRemove}
-          className="rounded-sm text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="touch-target rounded-sm text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={`Remove ${skillLabel}`}
         >
           <X aria-hidden="true" className="h-4 w-4" />

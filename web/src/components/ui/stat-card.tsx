@@ -29,9 +29,9 @@ export function StatCard({ label, value, icon: Icon, tone, className }: StatCard
       aria-label={`${label}: ${value}`}
       className={cn("flex min-w-0 flex-col gap-1 rounded-lg border bg-card p-3", className)}
     >
-      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-medium text-muted-foreground">
         <Icon aria-hidden="true" className={iconVariants({ tone })} />
-        <span className="truncate">{label}</span>
+        <span className="min-w-0 break-words">{label}</span>
       </span>
       <span className="text-2xl font-semibold tabular-nums leading-none">{value}</span>
     </div>

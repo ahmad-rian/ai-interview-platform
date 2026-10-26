@@ -22,7 +22,7 @@ export const PageHeader = React.forwardRef<HTMLHeadingElement, PageHeaderProps>(
     <div className={cn("space-y-2", className)}>
       {back && (
         <Link to={back.to}
-              className="inline-flex items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              className="inline-flex max-sm:min-h-11 items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           {back.label}
         </Link>
@@ -35,7 +35,7 @@ export const PageHeader = React.forwardRef<HTMLHeadingElement, PageHeaderProps>(
           </h1>
           {description && <div className="text-sm text-muted-foreground">{description}</div>}
         </div>
-        {actions && <div className="flex flex-wrap gap-2 sm:justify-end">{actions}</div>}
+        {actions && <div className="flex flex-wrap gap-2 sm:justify-end max-sm:*:flex-1">{actions}</div>}
       </div>
     </div>
   );

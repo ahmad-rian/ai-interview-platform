@@ -46,7 +46,7 @@ export default function CandidateResultsMenu({ assessmentId, sessionId, candidat
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-7 rounded-l-none border-l-0 px-1.5"
+            <Button variant="outline" size="sm" className="h-7 rounded-l-none border-l-0 px-1.5 max-sm:min-w-11"
                     aria-label={`More results for ${candidateName}`}>
               <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
             </Button>

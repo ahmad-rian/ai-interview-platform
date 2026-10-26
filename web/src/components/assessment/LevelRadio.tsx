@@ -23,12 +23,12 @@ export default function LevelRadio({ value, onChange, disabled, className, label
       value={String(value)}
       onValueChange={(v) => onChange(Number(v))}
       disabled={disabled}
-      className={cn("flex items-center gap-3", className)}
+      className={cn("flex items-center gap-3 max-sm:gap-1", className)}
     >
       {[1, 2, 3, 4, 5].map((level) => (
-        <div key={level} className="flex items-center gap-1">
+        <div key={level} className="flex max-sm:min-h-11 max-sm:min-w-11 items-center gap-1">
           <RadioGroupItem value={String(level)} id={`${id}-level-${level}`} />
-          <Label htmlFor={`${id}-level-${level}`} className="cursor-pointer font-normal">
+          <Label htmlFor={`${id}-level-${level}`} className="cursor-pointer font-normal max-sm:flex max-sm:flex-1 max-sm:self-stretch max-sm:items-center">
             {LEVEL_LABELS[level]}
           </Label>
         </div>

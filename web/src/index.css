@@ -78,3 +78,22 @@
         @apply bg-background text-foreground;
     }
 }
+
+@layer utilities {
+  /* A 44 x 44 px tap area around a small control without changing its size
+     or the layout around it. */
+  /* Zero specificity, so a positioned control (e.g. absolute) keeps its position. */
+  :where(.touch-target) {
+    position: relative;
+  }
+
+  .touch-target::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}

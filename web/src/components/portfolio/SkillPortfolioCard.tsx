@@ -106,7 +106,7 @@ export default function SkillPortfolioCard({ skill, override, onOverrideSaved, o
           </div>
           <LevelSourceMarker source={source} aiLevel={parseLevel(skill.ai_level)} review={skill.review} variant="detailed" />
         </div>
-        <div className="flex flex-wrap gap-2 lg:justify-end">
+        <div className="flex flex-wrap gap-2 lg:justify-end max-sm:*:flex-1">
           <OverridePanel ref={ratingButtonRef} skill={skill} existingOverride={override} onSaved={handleSaved} onConflict={onConflict} />
           {canConfirm && <ConfirmRatingDialog skill={skill} onConfirmed={handleConfirmed} />}
           {override && <RevertOverrideDialog skill={skill} override={override} onReverted={handleReverted} />}
