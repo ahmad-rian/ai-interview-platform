@@ -76,6 +76,13 @@ describe("SkillPortfolioCard review actions", () => {
         expect(screen.getByText("Kandidat Contoh: kutipan tentang SQL.")).toBeInTheDocument();
     });
 
+    it("nests the evidence heading (h4) under the skill name (h3)", () => {
+        render(<SkillPortfolioCard skill={skillFixture()} onOverrideSaved={vi.fn()} />);
+
+        expect(screen.getByRole("heading", { level: 3, name: "Contoh SQL" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { level: 4, name: /Evidence from the interview/ })).toBeInTheDocument();
+    });
+
     it("wraps a 255-character skill name", () => {
         const label = "S".repeat(255);
         render(<SkillPortfolioCard skill={skillFixture({ skill_label: label })} onOverrideSaved={vi.fn()} />);
