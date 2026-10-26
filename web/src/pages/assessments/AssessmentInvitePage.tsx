@@ -22,9 +22,31 @@ import { Label } from "@/components/ui/label";
 import { assessmentsApi } from "@/services/assessments";
 import { LEVEL_LABELS } from "@/utils/constants";
 import { formatDate } from "@/utils/datetime";
-import { Copy, Check, Eye, Pencil, Clock, Plus, UserRound } from "lucide-react";
+import { candidateReviewStatus } from "@/components/review/reviewText";
+import { Copy, Check, Eye, FileCheck2, Loader2, Pencil, Clock, Plus, UserCheck, UserRound } from "lucide-react";
 import type { Assessment, Session } from "@/types";
 import { useRetryFocus } from "@/hooks/useRetryFocus";
+
+// The portfolio state and what still needs a human, instead of one green
+// "Completed" for every finished interview (N15).
+function PortfolioStatus({ session }: { session: Session }) {
+  if (session.portfolio_status === "failed") return <StatusBadge tone="danger">Portfolio failed</StatusBadge>;
+  if (session.portfolio_status === "generating") return <StatusBadge tone="info" icon={Loader2}>Generating</StatusBadge>;
+  if (session.portfolio_status !== "ready") return <StatusBadge tone="neutral">No portfolio yet</StatusBadge>;
+
+  return (
+    <>
+      <StatusBadge tone="neutral" icon={FileCheck2}>Portfolio ready</StatusBadge>
+      {candidateReviewStatus(session.review_summary ?? []).map(({ text, tone }) => (
+        <StatusBadge key={text} tone={tone} icon={tone === "success" ? UserCheck : undefined}>{text}</StatusBadge>
+      ))}
+    </>
+  );
+}
+
+function needsReview(session: Session) {
+  return (session.review_summary?.length ?? 0) > 0;
+}
 
 function SessionRow({
   session,
@@ -43,14 +65,12 @@ function SessionRow({
   const isLive = session.status === "active";
   const isEnded = session.status === "ended";
   const isPending = session.status === "pending";
+  // The number only names a candidate without a name; it is not shown.
   const displayName = session.candidate_name || `Candidate ${index}`;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3 px-4">
+    <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3 px-4">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-medium text-muted-foreground">
-          {index}
-        </div>
         <div className="min-w-0 space-y-0.5">
           <div className="text-sm font-medium [overflow-wrap:anywhere]">{displayName}</div>
           {session.started_at && (
@@ -61,11 +81,11 @@ function SessionRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         {isPending && <StatusBadge tone="warning">Awaiting candidate</StatusBadge>}
         {isLive && <StatusBadge tone="info">Live</StatusBadge>}
         {isEnded && session.end_reason === "error" && <StatusBadge tone="danger">Failed</StatusBadge>}
-        {isEnded && session.end_reason !== "error" && <StatusBadge tone="success">Completed</StatusBadge>}
+        {isEnded && session.end_reason !== "error" && <PortfolioStatus session={session} />}
 
         <div className="flex items-center gap-1.5">
           {isPending && (
@@ -97,7 +117,7 @@ function SessionRow({
           )}
         </div>
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -114,6 +134,7 @@ export default function AssessmentInvitePage() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [newSessionCopied, setNewSessionCopied] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState(false);
   const [candidateNameInput, setCandidateNameInput] = useState("");
 
   const loadSessions = useCallback(async () => {
@@ -307,23 +328,37 @@ export default function AssessmentInvitePage() {
             </div>
           </div>
         ) : (
-          <Card>
-            <CardContent className="p-0 divide-y">
-              {sessions.map((session, i) => (
-                <SessionRow
-                  key={session.id}
-                  session={session}
-                  index={sessions.length - i}
-                  assessmentId={id!}
-                  onCopy={(sid) => {
-                    const s = sessions.find((x) => x.id === sid);
-                    if (s) copyLink(s, sid);
-                  }}
-                  copiedId={copiedId}
-                />
-              ))}
-            </CardContent>
-          </Card>
+          <>
+            {sessions.some((s) => s.review_summary !== undefined) && (
+              <div role="group" aria-label="Show candidates" className="flex gap-2">
+                <Button type="button" size="sm" variant={reviewFilter ? "outline" : "default"} aria-pressed={!reviewFilter} className="max-sm:min-w-11"
+                        onClick={() => setReviewFilter(false)}>All</Button>
+                <Button type="button" size="sm" variant={reviewFilter ? "default" : "outline"} aria-pressed={reviewFilter} className="max-sm:min-w-11"
+                        onClick={() => setReviewFilter(true)}>Needs review</Button>
+              </div>
+            )}
+            {reviewFilter && !sessions.some(needsReview) ? (
+              <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">No candidates need review.</p>
+            ) : (
+              <Card>
+                <ul className="divide-y">
+                  {sessions.map((session, i) => (reviewFilter && !needsReview(session)) ? null : (
+                    <SessionRow
+                      key={session.id}
+                      session={session}
+                      index={sessions.length - i}
+                      assessmentId={id!}
+                      onCopy={(sid) => {
+                        const s = sessions.find((x) => x.id === sid);
+                        if (s) copyLink(s, sid);
+                      }}
+                      copiedId={copiedId}
+                    />
+                  ))}
+                </ul>
+              </Card>
+            )}
+          </>
         )}
       </div>
 
