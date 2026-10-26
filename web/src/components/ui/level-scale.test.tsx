@@ -27,4 +27,13 @@ describe("LevelScale", () => {
         expect(screen.getByRole("img", { name: "Required L4, candidate not assessed" })).toBeInTheDocument();
         expect(steps().every((s) => s.getAttribute("data-filled") === "false")).toBe(true);
     });
+
+    it("works without a requirement, for the portfolio where no vacancy is chosen", () => {
+        const { rerender } = render(<LevelScale candidate={3} />);
+        expect(screen.getByRole("img", { name: "Level L3" })).toBeInTheDocument();
+        expect(steps().some((s) => s.hasAttribute("data-required"))).toBe(false);
+
+        rerender(<LevelScale candidate={null} />);
+        expect(screen.getByRole("img", { name: "Not assessed" })).toBeInTheDocument();
+    });
 });
