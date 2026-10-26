@@ -123,10 +123,15 @@ describe("candidate list", () => {
     });
 
     it("shows the start date in the shared format and an AA status colour", async () => {
+        vi.mocked(assessmentsApi.getSessions).mockResolvedValue(ok({ sessions: [
+            { ...SESSION, portfolio_status: "failed", review_summary: [{ code: "generation_failed", count: 1 }] },
+        ] }));
         renderAt("/assessments/1/invite", "/assessments/:id/invite", <AssessmentInvitePage />);
 
         expect(await screen.findByText("Started 25 Oct 2026")).toBeInTheDocument();
-        expect(screen.getByText("Completed")).toHaveClass("text-green-800");
+        // A finished interview whose portfolio failed is not "Completed" (N15).
+        expect(screen.getByText("Portfolio failed")).toHaveClass("text-red-800");
+        expect(screen.queryByText("Completed")).not.toBeInTheDocument();
     });
 });
 
