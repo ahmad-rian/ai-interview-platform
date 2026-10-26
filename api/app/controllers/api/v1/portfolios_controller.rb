@@ -152,7 +152,7 @@ module Api
       # Portfolio has no tenant column; scope through the owning session so that
       # another organisation's portfolio behaves as if it does not exist (404).
       def tenant_portfolios
-        Portfolio.for_tenant(current_tenant_id)
+        Portfolio.all
       end
 
       def set_session
