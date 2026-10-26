@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, FileDown, ListPlus, Loader2 } from "lucide-react";
+import { FileDown, ListPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageShell } from "@/components/ui/page-shell";
 import { Callout } from "@/components/ui/callout";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -126,44 +128,45 @@ export default function FitGapReportPage() {
   if (state.loading) return <FitGapSkeleton />;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <Link to={portfolioPath}
-                className="inline-flex items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-            Portfolio
-          </Link>
-          <h1 ref={headingRef} tabIndex={-1} className="rounded-sm text-xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Fit/Gap Report</h1>
-          <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            {state.candidateName && (
-              <div className="flex min-w-0 gap-1">
-                <dt className="text-muted-foreground">Candidate</dt>
-                <dd className="font-medium [overflow-wrap:anywhere]">{state.candidateName}</dd>
-              </div>
+    <PageShell>
+      <PageHeader
+        ref={headingRef}
+        title="Fit/Gap Report"
+        back={{ to: portfolioPath, label: "Back to portfolio" }}
+        description={
+          <div className="space-y-1">
+            <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {state.candidateName && (
+                <div className="flex min-w-0 gap-1">
+                  <dt className="text-muted-foreground">Candidate</dt>
+                  <dd className="font-medium text-foreground [overflow-wrap:anywhere]">{state.candidateName}</dd>
+                </div>
+              )}
+              {report?.role_title && (
+                <div className="flex min-w-0 gap-1">
+                  <dt className="text-muted-foreground">Vacancy</dt>
+                  <dd className="font-medium text-foreground [overflow-wrap:anywhere]">{report.role_title}</dd>
+                </div>
+              )}
+            </dl>
+            {state.computedAt && (
+              <p className="text-xs text-muted-foreground">Computed from current ratings, {formatUtc(state.computedAt)}</p>
             )}
-            {report?.role_title && (
-              <div className="flex min-w-0 gap-1">
-                <dt className="text-muted-foreground">Vacancy</dt>
-                <dd className="font-medium [overflow-wrap:anywhere]">{report.role_title}</dd>
-              </div>
-            )}
-          </dl>
-          {state.computedAt && (
-            <p className="text-xs text-muted-foreground">Computed from current ratings, {formatUtc(state.computedAt)}</p>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {(["pdf", "json"] as const).map((format) => (
-            <Button key={format} variant={format === "pdf" ? "default" : "outline"} size="sm"
-                    onClick={() => handleExport(format)} disabled={!report}
-                    aria-disabled={exporting !== null || undefined} className="aria-disabled:cursor-wait aria-disabled:opacity-60">
-              {exporting === format ? <Loader2 aria-hidden="true" className="animate-spin" /> : <FileDown aria-hidden="true" />}
-              {format === "pdf" ? "Export PDF" : "Export JSON"}
-            </Button>
-          ))}
-        </div>
-      </header>
+          </div>
+        }
+        actions={
+          <>
+            {(["pdf", "json"] as const).map((format) => (
+              <Button key={format} variant={format === "pdf" ? "default" : "outline"} size="sm"
+                      onClick={() => handleExport(format)} disabled={!report}
+                      aria-disabled={exporting !== null || undefined} className="aria-disabled:cursor-wait aria-disabled:opacity-60">
+                {exporting === format ? <Loader2 aria-hidden="true" className="animate-spin" /> : <FileDown aria-hidden="true" />}
+                {format === "pdf" ? "Export PDF" : "Export JSON"}
+              </Button>
+            ))}
+          </>
+        }
+      />
 
       {exportError && <Callout variant="error" role="alert" title="Export failed">{exportError}</Callout>}
 
@@ -195,6 +198,6 @@ export default function FitGapReportPage() {
           {portfolio && <DiscoveredSkills portfolio={portfolio} />}
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

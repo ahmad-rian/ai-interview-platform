@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, FileDown, FileText, Inbox, Loader2, RotateCw } from "lucide-react";
+import { CheckCircle2, FileDown, FileText, Inbox, Loader2, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageShell } from "@/components/ui/page-shell";
 import { Callout } from "@/components/ui/callout";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -109,31 +111,28 @@ export default function PortfolioPage() {
   const listProps = { overrides, onReviewChanged: handleReviewChanged, onConflict: state.refresh };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <Link to={`/assessments/${id}/invite`}
-                className="inline-flex items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-            Candidates
-          </Link>
-          <h1 ref={headingRef} tabIndex={-1} className="rounded-sm text-xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Portfolio</h1>
-          {state.candidateName && <p className="text-sm font-medium [overflow-wrap:anywhere]">{state.candidateName}</p>}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link to={`${basePath}/transcript`}><FileText aria-hidden="true" />Transcript</Link>
-          </Button>
-          {(["pdf", "json"] as const).map((format) => (
-            <Button key={format} variant={format === "pdf" ? "default" : "outline"} size="sm"
-                    onClick={() => handleExport(format)} disabled={!complete}
-                    aria-disabled={exporting !== null || undefined} className="aria-disabled:cursor-wait aria-disabled:opacity-60">
-              {exporting === format ? <Loader2 aria-hidden="true" className="animate-spin" /> : <FileDown aria-hidden="true" />}
-              {format === "pdf" ? "Export PDF" : "Export JSON"}
+    <PageShell>
+      <PageHeader
+        ref={headingRef}
+        title="Portfolio"
+        back={{ to: `/assessments/${id}/invite`, label: "Back to candidates" }}
+        description={state.candidateName && <span className="font-medium text-foreground [overflow-wrap:anywhere]">{state.candidateName}</span>}
+        actions={
+          <>
+            <Button asChild variant="outline" size="sm">
+              <Link to={`${basePath}/transcript`}><FileText aria-hidden="true" />Transcript</Link>
             </Button>
-          ))}
-        </div>
-      </header>
+            {(["pdf", "json"] as const).map((format) => (
+              <Button key={format} variant={format === "pdf" ? "default" : "outline"} size="sm"
+                      onClick={() => handleExport(format)} disabled={!complete}
+                      aria-disabled={exporting !== null || undefined} className="aria-disabled:cursor-wait aria-disabled:opacity-60">
+                {exporting === format ? <Loader2 aria-hidden="true" className="animate-spin" /> : <FileDown aria-hidden="true" />}
+                {format === "pdf" ? "Export PDF" : "Export JSON"}
+              </Button>
+            ))}
+          </>
+        }
+      />
 
       {exportError && <Callout variant="error" role="alert" title="Export failed">{exportError}</Callout>}
 
@@ -208,6 +207,6 @@ export default function PortfolioPage() {
           <FitGapPicker ref={vacancyRef} basePath={basePath} vacancies={state.vacancies} />
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

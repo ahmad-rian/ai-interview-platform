@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Same blocks as the loaded page: header, summary, skill cards.
 export default function PortfolioSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading portfolio" className="mx-auto max-w-4xl space-y-6">
+    <div aria-busy="true" aria-label="Loading portfolio" className="mx-auto max-w-5xl space-y-6">
       <div className="space-y-2">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-7 w-48" />
