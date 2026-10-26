@@ -9,7 +9,7 @@ vi.mock("@/services/portfolios", () => ({ portfoliosApi: { confirmRating: vi.fn(
 function open(skill = skillFixture()) {
     const onConfirmed = vi.fn();
     render(<ConfirmRatingDialog skill={skill} onConfirmed={onConfirmed} />);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm AI rating" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm AI rating for Contoh SQL" }));
     return { onConfirmed };
 }
 

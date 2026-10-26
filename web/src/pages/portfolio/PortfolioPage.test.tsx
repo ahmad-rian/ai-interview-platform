@@ -181,7 +181,7 @@ describe("PortfolioPage", () => {
         await renderLoaded();
         const card = screen.getByRole("article", { name: "Contoh SQL" });
 
-        fireEvent.click(within(card).getByRole("button", { name: "Override rating" }));
+        fireEvent.click(within(card).getByRole("button", { name: "Override rating for Contoh SQL" }));
         fireEvent.click(screen.getByLabelText("L3"));
         fireEvent.change(screen.getByLabelText(/reason for the change/i), { target: { value: "Contoh alasan." } });
         const callsBefore = vi.mocked(sessionsApi.getPortfolio).mock.calls.length;
@@ -196,7 +196,7 @@ describe("PortfolioPage", () => {
 
     it("returns focus to the opener when the dialog is cancelled", async () => {
         await renderLoaded();
-        const trigger = within(screen.getByRole("article", { name: "Contoh SQL" })).getByRole("button", { name: "Override rating" });
+        const trigger = within(screen.getByRole("article", { name: "Contoh SQL" })).getByRole("button", { name: "Override rating for Contoh SQL" });
         trigger.focus();
         fireEvent.click(trigger);
 
@@ -213,18 +213,18 @@ describe("PortfolioPage", () => {
         await renderLoaded();
         const card = screen.getByRole("article", { name: "Contoh SQL" });
 
-        fireEvent.click(within(card).getByRole("button", { name: "Confirm AI rating" }));
+        fireEvent.click(within(card).getByRole("button", { name: "Confirm AI rating for Contoh SQL" }));
         fireEvent.click(await screen.findByRole("button", { name: "Confirm rating" }));
 
-        await waitFor(() => expect(within(card).queryByRole("button", { name: "Confirm AI rating" })).not.toBeInTheDocument());
-        await waitFor(() => expect(document.activeElement).toBe(within(card).getByRole("button", { name: "Override rating" })));
+        await waitFor(() => expect(within(card).queryByRole("button", { name: "Confirm AI rating for Contoh SQL" })).not.toBeInTheDocument());
+        await waitFor(() => expect(document.activeElement).toBe(within(card).getByRole("button", { name: "Override rating for Contoh SQL" })));
         expect(screen.getByRole("status", { name: "Review status" })).toHaveTextContent("Confirmed: Contoh SQL stays at L2");
     });
 
     it("on a 409 loads the latest portfolio when asked", async () => {
         vi.mocked(portfoliosApi.getOverride).mockRejectedValue(httpError(409, { errors: [{ status: 409, message: "changed" }] }));
         await renderLoaded();
-        fireEvent.click(within(screen.getByRole("article", { name: "Contoh SQL" })).getByRole("button", { name: "Override rating" }));
+        fireEvent.click(within(screen.getByRole("article", { name: "Contoh SQL" })).getByRole("button", { name: "Override rating for Contoh SQL" }));
         fireEvent.click(screen.getByLabelText("L3"));
         fireEvent.change(screen.getByLabelText(/reason for the change/i), { target: { value: "Contoh alasan." } });
         fireEvent.click(screen.getByRole("button", { name: /save override/i }));

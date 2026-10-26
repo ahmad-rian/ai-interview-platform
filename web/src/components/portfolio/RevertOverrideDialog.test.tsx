@@ -11,7 +11,7 @@ const overridden = skillFixture({ effective_level: 3, level_source: "assessor_ov
 function open(skill = overridden) {
     const onReverted = vi.fn();
     render(<RevertOverrideDialog skill={skill} override={overrideFixture()} onReverted={onReverted} />);
-    fireEvent.click(screen.getByRole("button", { name: "Undo override" }));
+    fireEvent.click(screen.getByRole("button", { name: "Undo override for Contoh SQL" }));
     return { onReverted };
 }
 

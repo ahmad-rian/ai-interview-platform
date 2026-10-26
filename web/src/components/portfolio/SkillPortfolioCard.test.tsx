@@ -37,16 +37,16 @@ describe("SkillPortfolioCard review actions", () => {
         expect(screen.getByRole("img", { name: "Level L3" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "High confidence, 3 probes" })).toBeInTheDocument();
         expect(screen.getByText("AI rating, not reviewed")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Override rating" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Confirm AI rating" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Override rating for Contoh SQL" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Confirm AI rating for Contoh SQL" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Review history for Contoh SQL" })).toBeInTheDocument();
     });
 
     it("hides Confirm for a not-assessed skill but still allows a manual rating", () => {
         render(<SkillPortfolioCard skill={notAssessed} onOverrideSaved={vi.fn()} />);
 
-        expect(screen.queryByRole("button", { name: "Confirm AI rating" })).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Rate manually" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Confirm AI rating for Contoh System Design" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Rate manually for Contoh System Design" })).toBeInTheDocument();
     });
 
     it("shows an override with its AI level, note and assessor, and offers change and undo but not confirm", () => {
@@ -56,16 +56,16 @@ describe("SkillPortfolioCard review actions", () => {
 
         expect(screen.getByText("Assessor override (AI L2)")).toBeInTheDocument();
         expect(screen.getByText("Assessor #7, 25 Oct 2026, 08:00 UTC")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Change rating" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Undo override" })).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Confirm AI rating" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Change rating for Contoh SQL" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Undo override for Contoh SQL" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Confirm AI rating for Contoh SQL" })).not.toBeInTheDocument();
     });
 
     it("does not offer Confirm again for a rating an assessor already confirmed", () => {
         render(<SkillPortfolioCard skill={skillFixture({ level_source: "assessor_confirmed", assessor_confirmed: true })} onOverrideSaved={vi.fn()} />);
 
         expect(screen.getByText("Confirmed by assessor")).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Confirm AI rating" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Confirm AI rating for Contoh SQL" })).not.toBeInTheDocument();
     });
 
     it("opens the evidence from the interview", () => {
