@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import CandidateResultsMenu from "@/components/assessment/CandidateResultsMenu";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -105,14 +106,7 @@ function SessionRow({
             </Button>
           )}
           {isEnded && session.end_reason !== "error" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => navigate(`/assessments/${assessmentId}/sessions/${session.id}/portfolio`)}
-            >
-              Results
-            </Button>
+            <CandidateResultsMenu assessmentId={assessmentId} sessionId={session.id} candidateName={displayName} />
           )}
         </div>
       </div>
