@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, ClipboardList, Clock, Languages, Plus } from "lucide-react";
+import { CalendarDays, ClipboardList, Clock, Languages, Plus, UserCheck, Users } from "lucide-react";
+import NeedsReviewSection from "@/components/review/NeedsReviewSection";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -34,6 +35,17 @@ function AssessmentMeta({ assessment }: { assessment: Assessment }) {
       {assessment.created_at && (
         <span className="flex items-center gap-1"><CalendarDays aria-hidden="true" className="h-3 w-3" />Created {formatDate(assessment.created_at)}</span>
       )}
+      {assessment.candidate_count !== undefined && (
+        <span className="flex items-center gap-1">
+          <Users aria-hidden="true" className="h-3 w-3" />
+          {`${assessment.candidate_count} ${assessment.candidate_count === 1 ? "candidate" : "candidates"}`}
+        </span>
+      )}
+      {(assessment.needs_review_count ?? 0) > 0 ? (
+        <StatusBadge tone="warning">{`${assessment.needs_review_count} need review`}</StatusBadge>
+      ) : (assessment.candidate_count ?? 0) > 0 && assessment.needs_review_count === 0 ? (
+        <StatusBadge tone="success" icon={UserCheck}>All reviewed</StatusBadge>
+      ) : null}
     </>
   );
 }
@@ -66,6 +78,10 @@ export default function AssessmentListPage() {
     <PageShell>
       <PageHeader ref={headingRef} title="Assessments" description="Interviews you send to candidates. Open one to invite candidates and read their results."
                   actions={newButton} />
+
+      <NeedsReviewSection />
+
+      <h2 className="text-lg font-semibold">All assessments</h2>
 
       {loading ? (
         <div aria-busy="true" aria-label="Loading assessments" className="space-y-2">

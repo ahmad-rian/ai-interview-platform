@@ -12,6 +12,9 @@ export interface Assessment {
     status: "pending" | "active" | "ended";
     end_reason?: string | null;
   };
+  // List only: candidates, and candidates whose portfolio still needs review.
+  candidate_count?: number;
+  needs_review_count?: number;
 }
 
 export interface AssessmentSkill {
@@ -45,6 +48,45 @@ export interface Session {
   ended_at?: string;
   duration_seconds?: number;
   created_at?: string;
+  // Candidate list only (GET /assessments/:id/sessions).
+  portfolio_status?: PortfolioStatus;
+  review_summary?: ReviewReason[];
+}
+
+export type PortfolioStatus = "none" | "generating" | "ready" | "failed";
+
+// Why a portfolio still needs a human (Portfolios::ReviewReasons on the API).
+export type ReviewReasonCode =
+  | "generation_failed"
+  | "empty_portfolio"
+  | "legacy_ratings"
+  | "unreviewed_low_confidence"
+  | "unreviewed_not_assessed"
+  | "narrative_failed"
+  | "narrative_outdated";
+
+export interface ReviewReason {
+  code: ReviewReasonCode;
+  count: number;
+}
+
+export type ReviewGroup = "skills" | "narratives" | "legacy" | "portfolio";
+
+export interface ReviewQueueItem {
+  portfolio_id: number;
+  session_id: number;
+  assessment_id: number;
+  assessment_name: string;
+  candidate_name: string | null;
+  reasons: ReviewReason[];
+  waiting_since: string;
+  target: { page: "portfolio" | "fitgap"; vacancy_id: number | null };
+}
+
+export interface ReviewQueue {
+  summary: Record<ReviewReasonCode | "portfolios", number>;
+  items: ReviewQueueItem[];
+  meta: PaginationMeta;
 }
 
 export interface CoverageSkill {
