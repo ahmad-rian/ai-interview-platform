@@ -197,8 +197,8 @@ export default function AssessmentInvitePage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <Link to="/assessments" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
+          <Link to="/assessments" aria-label="Back to assessments" className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </Link>
           <div>
             <h1 className="text-lg font-semibold">{assessment?.name ?? "—"}</h1>
@@ -325,7 +325,7 @@ export default function AssessmentInvitePage() {
                 <li key={s.id ?? s.skill_label} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>•</span>
                   <span>{s.skill_label}</span>
-                  <span className="text-xs">(expected {LEVEL_LABELS[s.expected_level]})</span>
+                  {LEVEL_LABELS[s.expected_level] && <span className="text-xs">(expected {LEVEL_LABELS[s.expected_level]})</span>}
                 </li>
               ))}
             </ul>

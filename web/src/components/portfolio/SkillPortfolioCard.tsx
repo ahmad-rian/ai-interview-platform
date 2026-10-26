@@ -29,7 +29,7 @@ function Evidence({ skill }: { skill: PortfolioSkill }) {
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="evidence" className="border-b-0">
-        <AccordionTrigger className="justify-start gap-1 rounded-sm py-1 text-sm text-teal-800 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <AccordionTrigger headingLevel={4} className="justify-start gap-1 rounded-sm py-1 text-sm text-teal-800 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <span>
             {`Evidence from the interview (${skill.evidence.length})`} <span className="sr-only">for {skill.skill_label}</span>
           </span>
