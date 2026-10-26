@@ -63,6 +63,7 @@ module DevScenarios
     Current.using(tenant_id: org_a.id) { results.concat(seed_tenant_a) }
     Current.using(tenant_id: org_b.id) { results.concat(seed_tenant_b) }
     print_summary(results)
+    print_pending_invite
   end
 
   def find_or_create_org_b
@@ -96,6 +97,7 @@ module DevScenarios
     empty_vacancy = create_vacancy("#{PREFIX} Vacancy tanpa skill", [])
 
     normal = scenario(assessment, vacancy, 'A', 'normal: semua skill dinilai', normal_response('A'))
+    @pending_invite = pending_invite(assessment)
     [
       normal,
       scenario(assessment, vacancy, 'B', 'skill vacancy tidak dibahas', not_covered_response,
@@ -134,6 +136,12 @@ module DevScenarios
                                   ratings_validated: true)
     { code: 'L', label: 'portfolio tanpa skill', assessment: assessment, session: session,
       portfolio: portfolio, vacancy: vacancy, report: nil }
+  end
+
+  # A candidate who has not started yet, for the invite list and the candidate
+  # pages (landing and hardware check). Removed by reset! like the others.
+  def pending_invite(assessment)
+    Session.create!(assessment: assessment, status: 'pending', candidate_name: "Kandidat #{PREFIX} Undangan")
   end
 
   def seed_tenant_b
@@ -334,6 +342,11 @@ module DevScenarios
       line += " | #{base}/fitgap/#{r[:vacancy].id}" if r[:vacancy]
       puts line
     end
+  end
+
+  def print_pending_invite
+    puts "  [pending] undangan belum dimulai | /assessments/#{@pending_invite.assessment_id}/invite" \
+         " | /interview/#{@pending_invite.invite_token}"
   end
 end
 
