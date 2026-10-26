@@ -57,13 +57,19 @@ module Portfolios
     # The order matters: an unprobed skill is "not covered" whatever the model said.
     def not_assessed_reason(evidence)
       return 'not_covered' unless RATED_COVERAGE_STATES.include?(@coverage&.state)
+      return 'no_level_from_model' if @data['level'].nil?
+      return 'invalid_level_from_model' if parsed_level.nil?
       return 'no_evidence' if evidence.empty?
 
       nil
     end
 
     def parsed_level
-      @data['level'].to_i.clamp(1, 5)
+      raw = @data['level']
+      return raw if raw.is_a?(Integer) && raw.between?(1, 5)
+      return raw.to_i if raw.is_a?(String) && raw.strip.match?(LEVEL_PATTERN)
+
+      nil
     end
 
     # PRD-01 section 5: high = probe_count >= 3 and covered;
