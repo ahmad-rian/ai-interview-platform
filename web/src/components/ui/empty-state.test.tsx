@@ -14,4 +14,10 @@ describe("EmptyState", () => {
         expect(screen.getByText("Add skills to compare.")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Add skills" })).toBeInTheDocument();
     });
+
+    it("can be the page's h1 when it is the whole page", () => {
+        render(<EmptyState title="Page not found" headingLevel={1} />);
+
+        expect(screen.getByRole("heading", { level: 1, name: "Page not found" })).toBeInTheDocument();
+    });
 });
