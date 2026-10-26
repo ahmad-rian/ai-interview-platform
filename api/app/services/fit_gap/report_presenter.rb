@@ -102,11 +102,6 @@ module FitGap
                         not_assessed_reason: skill&.not_assessed_reason || 'not_covered') if level.nil?
 
       delta = level - vacancy_skill.expected_level
-      if view.confidence == 'low' && !view.human_reviewed?
-        return base.merge(result: 'low_confidence', delta: delta, counts_toward_fit: false,
-                          tentative_direction: direction(delta))
-      end
-
       base.merge(result: { -1 => 'gap', 0 => 'match', 1 => 'exceed' }.fetch(delta <=> 0), delta: delta,
                  counts_toward_fit: true)
     end
