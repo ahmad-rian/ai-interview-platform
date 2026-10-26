@@ -19,7 +19,7 @@ module FitGap
     end
 
     def comparisons
-      @comparisons ||= @vacancy.vacancy_skills.order(:id).map { |vacancy_skill| compare(vacancy_skill) }
+      @comparisons ||= vacancy_skills.map { |vacancy_skill| compare(vacancy_skill) }
     end
 
     # Fingerprint of everything the narrative is based on; a stored narrative
@@ -122,8 +122,19 @@ module FitGap
         configured.find { |s| PortfolioSkill.key_for(skill_id: nil, skill_label: s.skill_label) == key }
     end
 
+    # Preloaded associations are used as they are (review queue, lists), so
+    # many reports can be read without a query per portfolio.
     def portfolio_skills
-      @portfolio_skills ||= @portfolio.portfolio_skills.includes(:assessor_override, :override_events).to_a
+      @portfolio_skills ||= if @portfolio.association(:portfolio_skills).loaded?
+                              @portfolio.portfolio_skills.to_a
+                            else
+                              @portfolio.portfolio_skills.includes(:assessor_override, :override_events).to_a
+                            end
+    end
+
+    def vacancy_skills
+      skills = @vacancy.vacancy_skills
+      skills.loaded? ? skills.sort_by(&:id) : skills.order(:id)
     end
 
     def narrative_status

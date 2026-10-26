@@ -53,6 +53,8 @@ Rails.application.routes.draw do
       # Vacancies
       resources :vacancies
 
+      get 'review_queue', to: 'review_queue#index'
+
       # Portfolios — fit/gap and export
       resources :portfolios, only: [] do
         member do

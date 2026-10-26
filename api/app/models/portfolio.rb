@@ -8,6 +8,9 @@ class Portfolio < ApplicationRecord
   belongs_to :session
   has_many :portfolio_skills, dependent: :destroy
   has_many :assessor_overrides, through: :portfolio_skills
+  # Read-only here (review reasons). Deleting reports with the portfolio is a
+  # separate decision (finding N7), so no dependent option is set.
+  has_many :fit_gap_reports # rubocop:disable Rails/HasManyOrHasOneDependent
 
   validates :generation_status, inclusion: { in: GENERATION_STATUSES }
   validates :generation_error_code, inclusion: { in: ERROR_CODES }, allow_nil: true
