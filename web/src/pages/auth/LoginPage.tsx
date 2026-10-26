@@ -34,8 +34,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm space-y-6">
+    <main className="min-h-screen flex items-center justify-center bg-muted/40 px-4">
+      <div className="w-full max-w-sm space-y-6 rounded-lg border bg-card p-6 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold">AI Interview</h1>
           <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
@@ -66,15 +66,15 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {loading && <Loader2 aria-hidden="true" className="h-4 w-4 mr-2 animate-spin" />}
             Sign in
           </Button>
         </form>
 
       </div>
-    </div>
+    </main>
   );
 }

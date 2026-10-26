@@ -1,10 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import CandidateResultsMenu from "@/components/assessment/CandidateResultsMenu";
 import { Callout } from "@/components/ui/callout";
+import { ErrorState } from "@/components/ui/error-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageShell } from "@/components/ui/page-shell";
 import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -17,8 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { assessmentsApi } from "@/services/assessments";
 import { LEVEL_LABELS } from "@/utils/constants";
-import { ArrowLeft, Copy, Check, Eye, Pencil, Clock, Plus, UserRound } from "lucide-react";
+import { formatDate } from "@/utils/datetime";
+import { Copy, Check, Eye, Pencil, Clock, Plus, UserRound } from "lucide-react";
 import type { Assessment, Session } from "@/types";
+import { useRetryFocus } from "@/hooks/useRetryFocus";
 
 function SessionRow({
   session,
@@ -40,46 +46,26 @@ function SessionRow({
   const displayName = session.candidate_name || `Candidate ${index}`;
 
   return (
-    <div className="flex items-center justify-between py-3 px-4">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3 px-4">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-medium text-muted-foreground">
           {index}
         </div>
-        <div className="space-y-0.5">
-          <div className="text-sm font-medium">{displayName}</div>
+        <div className="min-w-0 space-y-0.5">
+          <div className="text-sm font-medium [overflow-wrap:anywhere]">{displayName}</div>
           {session.started_at && (
             <div className="text-xs text-muted-foreground">
-              {new Date(session.started_at).toLocaleDateString()}
+              Started {formatDate(session.started_at)}
             </div>
           )}
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        {isPending && (
-          <span className="flex items-center gap-1 text-xs text-amber-600">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            Awaiting candidate
-          </span>
-        )}
-        {isLive && (
-          <span className="flex items-center gap-1 text-xs text-primary">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Live
-          </span>
-        )}
-        {isEnded && session.end_reason === "error" && (
-          <span className="flex items-center gap-1 text-xs text-destructive">
-            <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-            Failed
-          </span>
-        )}
-        {isEnded && session.end_reason !== "error" && (
-          <span className="flex items-center gap-1 text-xs text-green-600">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            Completed
-          </span>
-        )}
+        {isPending && <StatusBadge tone="warning">Awaiting candidate</StatusBadge>}
+        {isLive && <StatusBadge tone="info">Live</StatusBadge>}
+        {isEnded && session.end_reason === "error" && <StatusBadge tone="danger">Failed</StatusBadge>}
+        {isEnded && session.end_reason !== "error" && <StatusBadge tone="success">Completed</StatusBadge>}
 
         <div className="flex items-center gap-1.5">
           {isPending && (
@@ -90,9 +76,9 @@ function SessionRow({
               onClick={() => onCopy(session.id)}
             >
               {copiedId === session.id ? (
-                <><Check className="h-3 w-3 mr-1" /> Copied</>
+                <><Check aria-hidden="true" className="h-3 w-3 mr-1" /> Copied</>
               ) : (
-                <><Copy className="h-3 w-3 mr-1" /> Copy link</>
+                <><Copy aria-hidden="true" className="h-3 w-3 mr-1" /> Copy link</>
               )}
             </Button>
           )}
@@ -103,7 +89,7 @@ function SessionRow({
               className="h-7 px-2 text-xs"
               onClick={() => navigate(`/assessments/${assessmentId}/sessions/${session.id}/monitor`)}
             >
-              <Eye className="h-3 w-3 mr-1" /> Monitor
+              <Eye aria-hidden="true" className="h-3 w-3 mr-1" /> Monitor
             </Button>
           )}
           {isEnded && session.end_reason !== "error" && (
@@ -121,6 +107,7 @@ export default function AssessmentInvitePage() {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [inviteFailed, setInviteFailed] = useState(false);
   const [creatingSession, setCreatingSession] = useState(false);
   const [newSession, setNewSession] = useState<Session | null>(null);
@@ -134,15 +121,20 @@ export default function AssessmentInvitePage() {
     setSessions(res.data.sessions);
   }, [id]);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setLoadFailed(false);
     Promise.all([
       assessmentsApi.get(Number(id)),
       assessmentsApi.getSessions(Number(id)),
     ]).then(([aRes, sRes]) => {
       setAssessment(aRes.data.assessment);
       setSessions(sRes.data.sessions);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => setLoadFailed(true)).finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(load, [load]);
+  const { headingRef, markRetry } = useRetryFocus(loading);
 
   // Poll while any session is live or pending
   useEffect(() => {
@@ -187,43 +179,53 @@ export default function AssessmentInvitePage() {
     setTimeout(() => setNewSessionCopied(false), 2000);
   };
 
+  const back = { to: "/assessments", label: "Back to assessments" };
+
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-48 w-full" />
-      </div>
+      <PageShell>
+        <div aria-busy="true" aria-label="Loading candidates" className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (loadFailed || !assessment) {
+    return (
+      <PageShell>
+        <PageHeader ref={headingRef} title="Candidates" back={back} />
+        <ErrorState title="Could not load this assessment" description="Check your connection, then try again." onRetry={() => { markRetry(); load(); }} />
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <Link to="/assessments" aria-label="Back to assessments" className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          </Link>
-          <div>
-            <h1 className="text-lg font-semibold">{assessment?.name ?? "—"}</h1>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-              <Clock className="h-3 w-3" />
-              {assessment?.time_limit_min} min · {assessment?.skills?.length ?? 0} skills
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/assessments/${id}/edit`)}>
-            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
-          </Button>
-          <Button size="sm" onClick={openInviteDialog} disabled={creatingSession}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            {creatingSession ? "Creating..." : "Invite Candidate"}
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        ref={headingRef}
+        title={assessment.name}
+        back={back}
+        description={
+          <span className="flex items-center gap-1.5">
+            <Clock aria-hidden="true" className="h-3.5 w-3.5" />
+            {assessment.time_limit_min} min · {assessment.skills?.length ?? 0} skills
+          </span>
+        }
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={() => navigate(`/assessments/${id}/edit`)}>
+              <Pencil aria-hidden="true" className="h-3.5 w-3.5 mr-1.5" /> Edit
+            </Button>
+            <Button size="sm" onClick={openInviteDialog} disabled={creatingSession}>
+              <Plus aria-hidden="true" className="h-3.5 w-3.5 mr-1.5" />
+              {creatingSession ? "Creating..." : "Invite Candidate"}
+            </Button>
+          </>
+        }
+      />
 
       {inviteFailed && (
         <Callout variant="error" role="alert" title="Could not create the invite link">
@@ -343,6 +345,6 @@ export default function AssessmentInvitePage() {
           </div>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }
